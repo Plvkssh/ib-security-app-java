@@ -1,0 +1,13 @@
+com\ibsecurity\model\Question.class
+com\ibsecurity\service\QuizService.class
+com\ibsecurity\data\QuestionBank.class
+com\ibsecurity\model\QuizResult.class
+com\ibsecurity\model\PhishingScenario.class
+com\ibsecurity\WebConfig.class
+com\ibsecurity\data\PhishingBank.class
+com\ibsecurity\Application.class
+com\ibsecurity\service\GigaChatService.class
+com\ibsecurity\service\GigaChatService$3.class
+com\ibsecurity\controller\QuizController.class
+com\ibsecurity\service\GigaChatService$1.class
+com\ibsecurity\service\GigaChatService$2.class
