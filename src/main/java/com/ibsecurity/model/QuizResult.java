@@ -43,6 +43,9 @@ public class QuizResult {
     @Column(length = 50)
     private String completedAt;
 
+    @Column(columnDefinition = "TEXT")
+    private String wrongAnswersSummary;
+
     @Column(nullable = false)
     private int phishingScore = 0;
 
@@ -146,6 +149,14 @@ public class QuizResult {
 
     public void setCompletedAt(String completedAt) {
         this.completedAt = completedAt;
+    }
+
+    public String getWrongAnswersSummary() {
+        return wrongAnswersSummary;
+    }
+
+    public void setWrongAnswersSummary(String wrongAnswersSummary) {
+        this.wrongAnswersSummary = wrongAnswersSummary;
     }
 
     public int getPhishingScore() {
