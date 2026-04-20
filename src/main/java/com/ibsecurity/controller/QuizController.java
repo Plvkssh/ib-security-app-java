@@ -3,8 +3,8 @@ package com.ibsecurity.controller;
 import com.ibsecurity.model.PhishingScenario;
 import com.ibsecurity.model.Question;
 import com.ibsecurity.model.QuizResult;
+import com.ibsecurity.service.AiPersonalizationService;
 import com.ibsecurity.service.GigaChatService;
-import com.ibsecurity.service.PersonalRecommendationService;
 import com.ibsecurity.service.QuizService;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
@@ -18,14 +18,14 @@ public class QuizController {
 
     private final QuizService quizService;
     private final GigaChatService gigaChatService;
-    private final PersonalRecommendationService personalRecommendationService;
+    private final AiPersonalizationService aiPersonalizationService;
 
     public QuizController(QuizService quizService,
                           GigaChatService gigaChatService,
-                          PersonalRecommendationService personalRecommendationService) {
+                          AiPersonalizationService aiPersonalizationService) {
         this.quizService = quizService;
         this.gigaChatService = gigaChatService;
-        this.personalRecommendationService = personalRecommendationService;
+        this.aiPersonalizationService = aiPersonalizationService;
     }
 
     @GetMapping("/questions")
@@ -51,9 +51,18 @@ public class QuizController {
         return quizService.getStats(authentication.getName());
     }
 
-    @GetMapping("/recommendations/me")
-    public Map<String, Object> getRecommendations(Authentication authentication) {
-        return personalRecommendationService.buildForUser(authentication.getName());
+    @GetMapping("/ai/personalize/me")
+    public Map<String, Object> getAiPersonalization(Authentication authentication) {
+        try {
+            return Map.of(
+                    "success", true,
+                    "data", aiPersonalizationService.buildAiPersonalization(authentication.getName())
+            );
+        } catch (IllegalStateException e) {
+            return Map.of("success", false, "error", "API ключ не настроен. Перейдите в Настройки.");
+        } catch (Exception e) {
+            return Map.of("success", false, "error", "Ошибка AI-персонализации: " + e.getMessage());
+        }
     }
 
     @PostMapping("/phishing/generate")
