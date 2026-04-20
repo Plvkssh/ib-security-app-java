@@ -1,92 +1,121 @@
-const API_ROOT = '__PORT_5000__';
+const API_ROOT = '__PORT_5000__'
 const BASE = (API_ROOT.startsWith('__') ? '' : API_ROOT) + '/api'
+
+function getCsrfToken() {
+  const cookie = document.cookie
+    .split('; ')
+    .find(row => row.startsWith('XSRF-TOKEN='))
+
+  if (!cookie) return null
+  return decodeURIComponent(cookie.split('=')[1])
+}
+
+async function apiFetch(path, options = {}) {
+  const method = (options.method || 'GET').toUpperCase()
+  const headers = { ...(options.headers || {}) }
+
+  let body = options.body
+
+  if (body && !(body instanceof FormData) && typeof body !== 'string') {
+    body = JSON.stringify(body)
+    headers['Content-Type'] = 'application/json'
+  }
+
+  if (!['GET', 'HEAD', 'OPTIONS'].includes(method)) {
+    const csrfToken = getCsrfToken()
+    if (csrfToken) {
+      headers['X-XSRF-TOKEN'] = csrfToken
+    }
+  }
+
+  const res = await fetch(`${BASE}${path}`, {
+    ...options,
+    method,
+    headers,
+    body,
+    credentials: 'include'
+  })
+
+  const contentType = res.headers.get('content-type') || ''
+  let payload = null
+
+  if (contentType.includes('application/json')) {
+    payload = await res.json()
+  } else {
+    payload = await res.text()
+  }
+
+  if (!res.ok) {
+    const message =
+      (payload && typeof payload === 'object' && payload.error) ||
+      (typeof payload === 'string' && payload) ||
+      'Ошибка запроса'
+    throw new Error(message)
+  }
+
+  return payload
+}
 
 export async function fetchQuestions(difficulty, topics, count) {
   const params = new URLSearchParams()
+
   if (difficulty) params.set('difficulty', difficulty)
-  if (topics && topics.length) topics.forEach(t => params.append('topics', t))
-  if (count) params.set('count', count.toString())
-  const res = await fetch(`${BASE}/questions?${params}`)
-  if (!res.ok) throw new Error('Failed to fetch questions')
-  return res.json()
+  if (topics && topics.length) {
+    topics.forEach(topic => params.append('topics', topic))
+  }
+  if (count) params.set('count', String(count))
+
+  const query = params.toString()
+  return apiFetch(`/questions${query ? `?${query}` : ''}`)
 }
 
 export async function saveResult(result) {
-  const res = await fetch(`${BASE}/results`, {
+  return apiFetch('/results', {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(result)
+    body: result
   })
-  if (!res.ok) throw new Error('Failed to save result')
-  return res.json()
 }
 
 export async function fetchResults() {
-  const res = await fetch(`${BASE}/results`)
-  if (!res.ok) throw new Error('Failed to fetch results')
-  return res.json()
+  return apiFetch('/results')
 }
 
 export async function fetchStats() {
-  const res = await fetch(`${BASE}/stats`)
-  if (!res.ok) throw new Error('Failed to fetch stats')
-  return res.json()
+  return apiFetch('/stats')
 }
 
 export async function generatePhishing(params) {
-  const res = await fetch(`${BASE}/phishing/generate`, {
+  return apiFetch('/phishing/generate', {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(params)
+    body: params
   })
-  if (!res.ok) throw new Error('Failed to generate phishing')
-  return res.json()
 }
 
-// --- AI API functions ---
-
 export async function setApiKey(apiKey) {
-  const res = await fetch(`${BASE}/settings/api-key`, {
+  return apiFetch('/settings/api-key', {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ apiKey })
+    body: { apiKey }
   })
-  if (!res.ok) throw new Error('Failed to set API key')
-  return res.json()
 }
 
 export async function getApiKeyStatus() {
-  const res = await fetch(`${BASE}/settings/api-key/status`)
-  if (!res.ok) throw new Error('Failed to get API key status')
-  return res.json()
+  return apiFetch('/settings/api-key/status')
 }
 
-export async function generateAIQuestions(weakTopics, difficulty, count) {
-  const res = await fetch(`${BASE}/ai/generate-questions`, {
+export async function generateAIQuestions(difficulty, count) {
+  return apiFetch('/ai/generate-questions/me', {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ weakTopics, difficulty, count })
+    body: { difficulty, count }
   })
-  if (!res.ok) throw new Error('Failed to generate AI questions')
-  return res.json()
 }
 
 export async function generateAIFeedback(score, total, topicResults) {
-  const res = await fetch(`${BASE}/ai/feedback`, {
+  return apiFetch('/ai/feedback', {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ score, total, topicResults })
+    body: { score, total, topicResults }
   })
-  if (!res.ok) throw new Error('Failed to generate AI feedback')
-  return res.json()
 }
 
-export async function generateAIPhishing(type, difficulty, trigger) {
-  const res = await fetch(`${BASE}/ai/phishing`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ type, difficulty, trigger })
-  })
-  if (!res.ok) throw new Error('Failed to generate AI phishing')
-  return res.json()
+export async function generateAIPhishing() {
+  return apiFetch('/ai/phishing/me')
 }
