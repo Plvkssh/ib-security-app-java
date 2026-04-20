@@ -37,7 +37,6 @@ export default function QuizPage() {
   const [answers, setAnswers] = useState([])
   const [loading, setLoading] = useState(false)
 
-  // AI state
   const [apiKeyConfigured, setApiKeyConfigured] = useState(false)
   const [aiFeedback, setAiFeedback] = useState(null)
   const [aiFeedbackLoading, setAiFeedbackLoading] = useState(false)
@@ -130,7 +129,6 @@ export default function QuizPage() {
     }))
   }
 
-  // AI: Generate feedback
   const handleAiFeedback = async (topicResults) => {
     setAiFeedbackLoading(true)
     setAiFeedbackError(null)
@@ -149,7 +147,6 @@ export default function QuizPage() {
     setAiFeedbackLoading(false)
   }
 
-  // AI: Train weak topics
   const handleAiTraining = async (weakTopicIds) => {
     setAiTrainingLoading(true)
     setAiTrainingError(null)
@@ -175,14 +172,12 @@ export default function QuizPage() {
     setAiTrainingLoading(false)
   }
 
-  // CONFIG PHASE
   if (phase === 'config') {
     return (
       <div className="max-w-2xl mx-auto">
         <h1 className="text-2xl font-bold text-slate-900 dark:text-white mb-6">Настройка теста</h1>
 
         <div className="bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 p-6 space-y-6">
-          {/* Difficulty */}
           <div>
             <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">Уровень сложности</label>
             <div className="flex flex-wrap gap-2">
@@ -206,7 +201,6 @@ export default function QuizPage() {
             </div>
           </div>
 
-          {/* Count */}
           <div>
             <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">Количество вопросов</label>
             <div className="flex gap-2">
@@ -223,7 +217,6 @@ export default function QuizPage() {
             </div>
           </div>
 
-          {/* Topics */}
           <div>
             <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">Тематика (оставьте пустым для всех)</label>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
@@ -263,7 +256,6 @@ export default function QuizPage() {
     )
   }
 
-  // QUIZ PHASE
   if (phase === 'quiz') {
     const q = questions[current]
     const progress = ((current + (answered ? 1 : 0)) / questions.length) * 100
@@ -271,7 +263,6 @@ export default function QuizPage() {
 
     return (
       <div className="max-w-2xl mx-auto">
-        {/* AI quiz badge */}
         {isAiQuiz && (
           <div className="mb-4 flex items-center gap-2 px-3 py-2 rounded-lg bg-purple-50 dark:bg-purple-950 border border-purple-200 dark:border-purple-800">
             <Sparkles size={16} className="text-purple-600 dark:text-purple-400" />
@@ -279,7 +270,6 @@ export default function QuizPage() {
           </div>
         )}
 
-        {/* Progress */}
         <div className="mb-6">
           <div className="flex justify-between items-center mb-2">
             <span className="text-sm text-slate-500 dark:text-slate-400">Вопрос {current + 1} из {questions.length}</span>
@@ -290,7 +280,6 @@ export default function QuizPage() {
           </div>
         </div>
 
-        {/* Question card */}
         <div className="bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 p-6">
           <div className="flex items-center gap-2 mb-4">
             <span className="px-2 py-0.5 text-xs font-medium rounded bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400">
@@ -336,7 +325,6 @@ export default function QuizPage() {
             })}
           </div>
 
-          {/* Explanation */}
           {answered && (
             <div className={`mt-5 p-4 rounded-lg ${isCorrect ? 'bg-emerald-50 dark:bg-emerald-950 border border-emerald-200 dark:border-emerald-800' : 'bg-red-50 dark:bg-red-950 border border-red-200 dark:border-red-800'}`}>
               <div className="flex items-center gap-2 mb-2">
@@ -352,7 +340,6 @@ export default function QuizPage() {
             </div>
           )}
 
-          {/* Actions */}
           <div className="mt-5 flex gap-3">
             {!answered ? (
               <button
@@ -378,12 +365,10 @@ export default function QuizPage() {
     )
   }
 
-  // RESULT PHASE
   const totalCorrect = answers.filter(a => a.correct).length
   const pct = Math.round(totalCorrect / questions.length * 100)
   const level = getLevel(pct)
 
-  // Analyze by topic
   const topicResults = {}
   answers.forEach((a, i) => {
     const topic = questions[i]?.topic
@@ -399,7 +384,6 @@ export default function QuizPage() {
   return (
     <div className="max-w-2xl mx-auto">
       <div className="bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 p-6 text-center">
-        {/* AI quiz badge */}
         {isAiQuiz && (
           <div className="mb-4 inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-purple-50 dark:bg-purple-950 border border-purple-200 dark:border-purple-800">
             <Sparkles size={14} className="text-purple-600 dark:text-purple-400" />
@@ -417,7 +401,6 @@ export default function QuizPage() {
         <div className="text-4xl font-bold text-slate-900 dark:text-white mb-1">{totalCorrect} / {questions.length}</div>
         <div className="text-lg text-slate-500 dark:text-slate-400 mb-6">{pct}% правильных ответов</div>
 
-        {/* Progress ring approximation */}
         <div className="w-32 h-32 mx-auto mb-6 relative">
           <svg viewBox="0 0 36 36" className="w-full h-full -rotate-90">
             <path d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"
@@ -431,7 +414,6 @@ export default function QuizPage() {
           </div>
         </div>
 
-        {/* Strengths & weaknesses */}
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-left mb-6">
           {strong.length > 0 && (
             <div className="bg-emerald-50 dark:bg-emerald-950 border border-emerald-200 dark:border-emerald-800 rounded-lg p-4">
@@ -455,7 +437,6 @@ export default function QuizPage() {
           )}
         </div>
 
-        {/* Recommendations */}
         <div className="bg-slate-50 dark:bg-slate-800 rounded-lg p-4 text-left mb-6">
           <h3 className="text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">Рекомендации</h3>
           <ul className="space-y-2 text-sm text-slate-600 dark:text-slate-400">
@@ -468,7 +449,6 @@ export default function QuizPage() {
           </ul>
         </div>
 
-        {/* AI Section */}
         <div className="border-t border-slate-200 dark:border-slate-800 pt-6 mb-6">
           <h3 className="text-sm font-semibold text-slate-900 dark:text-white mb-3 flex items-center justify-center gap-2">
             <Sparkles size={16} className="text-purple-500" />
@@ -494,7 +474,6 @@ export default function QuizPage() {
             </div>
           ) : (
             <div className="space-y-3">
-              {/* AI Feedback button */}
               <button
                 onClick={() => handleAiFeedback(topicResults)}
                 disabled={aiFeedbackLoading}
@@ -504,7 +483,6 @@ export default function QuizPage() {
                 {aiFeedbackLoading ? 'Анализ...' : 'ИИ-анализ'}
               </button>
 
-              {/* AI Feedback result */}
               {aiFeedback && (
                 <div className="p-4 rounded-lg bg-purple-50 dark:bg-purple-950 border border-purple-200 dark:border-purple-800 text-left">
                   <h4 className="text-sm font-medium text-purple-700 dark:text-purple-300 mb-2 flex items-center gap-2">
@@ -522,7 +500,6 @@ export default function QuizPage() {
                 </div>
               )}
 
-              {/* AI Training button — only show if there are weak topics */}
               {weakIds.length > 0 && (
                 <button
                   onClick={() => handleAiTraining(weakIds)}
