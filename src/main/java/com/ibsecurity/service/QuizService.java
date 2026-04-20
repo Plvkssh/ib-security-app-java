@@ -66,6 +66,13 @@ public class QuizService {
         return quizResultRepository.findByUser_IdOrderByCreatedAtDesc(user.getId());
     }
 
+    public Optional<QuizResult> getLatestResult(String username) {
+        AppUser user = userRepository.findByUsername(username)
+                .orElseThrow(() -> new RuntimeException("Пользователь не найден"));
+
+        return quizResultRepository.findTopByUser_IdOrderByCreatedAtDesc(user.getId());
+    }
+
     public Map<String, Object> getStats(String username) {
         List<QuizResult> results = getResults(username);
 
