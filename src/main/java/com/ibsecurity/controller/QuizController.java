@@ -4,6 +4,7 @@ import com.ibsecurity.model.PhishingScenario;
 import com.ibsecurity.model.Question;
 import com.ibsecurity.model.QuizResult;
 import com.ibsecurity.service.GigaChatService;
+import com.ibsecurity.service.PersonalRecommendationService;
 import com.ibsecurity.service.QuizService;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
@@ -17,10 +18,14 @@ public class QuizController {
 
     private final QuizService quizService;
     private final GigaChatService gigaChatService;
+    private final PersonalRecommendationService personalRecommendationService;
 
-    public QuizController(QuizService quizService, GigaChatService gigaChatService) {
+    public QuizController(QuizService quizService,
+                          GigaChatService gigaChatService,
+                          PersonalRecommendationService personalRecommendationService) {
         this.quizService = quizService;
         this.gigaChatService = gigaChatService;
+        this.personalRecommendationService = personalRecommendationService;
     }
 
     @GetMapping("/questions")
@@ -44,6 +49,11 @@ public class QuizController {
     @GetMapping("/stats")
     public Map<String, Object> getStats(Authentication authentication) {
         return quizService.getStats(authentication.getName());
+    }
+
+    @GetMapping("/recommendations/me")
+    public Map<String, Object> getRecommendations(Authentication authentication) {
+        return personalRecommendationService.buildForUser(authentication.getName());
     }
 
     @PostMapping("/phishing/generate")
