@@ -48,6 +48,7 @@ public class QuizService {
         entity.setTopics(incoming.getTopics() == null ? new ArrayList<>() : new ArrayList<>(incoming.getTopics()));
         entity.setLevel(incoming.getLevel());
         entity.setCompletedAt(incoming.getCompletedAt());
+        entity.setWrongAnswersSummary(incoming.getWrongAnswersSummary());
         entity.setPhishingScore(incoming.getPhishingScore());
         entity.setPasswordPolicyScore(incoming.getPasswordPolicyScore());
         entity.setEmailSafetyScore(incoming.getEmailSafetyScore());
