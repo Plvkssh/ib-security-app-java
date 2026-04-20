@@ -5,13 +5,14 @@ import com.ibsecurity.model.Question;
 import com.ibsecurity.model.QuizResult;
 import com.ibsecurity.service.GigaChatService;
 import com.ibsecurity.service.QuizService;
+import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.*;
+import java.util.List;
+import java.util.Map;
 
 @RestController
 @RequestMapping("/api")
-@CrossOrigin(origins = "*")
 public class QuizController {
 
     private final QuizService quizService;
@@ -31,18 +32,18 @@ public class QuizController {
     }
 
     @PostMapping("/results")
-    public QuizResult saveResult(@RequestBody QuizResult result) {
-        return quizService.saveResult(result);
+    public QuizResult saveResult(@RequestBody QuizResult result, Authentication authentication) {
+        return quizService.saveResult(authentication.getName(), result);
     }
 
     @GetMapping("/results")
-    public List<QuizResult> getResults() {
-        return quizService.getResults();
+    public List<QuizResult> getResults(Authentication authentication) {
+        return quizService.getResults(authentication.getName());
     }
 
     @GetMapping("/stats")
-    public Map<String, Object> getStats() {
-        return quizService.getStats();
+    public Map<String, Object> getStats(Authentication authentication) {
+        return quizService.getStats(authentication.getName());
     }
 
     @PostMapping("/phishing/generate")
@@ -51,10 +52,9 @@ public class QuizController {
         String difficulty = (String) params.getOrDefault("difficulty", "");
         String trigger = (String) params.getOrDefault("trigger", "");
         int count = params.containsKey("count") ? ((Number) params.get("count")).intValue() : 3;
+
         return quizService.getPhishingScenarios(type, difficulty, trigger, count);
     }
-
-    // --- AI Endpoints ---
 
     @PostMapping("/ai/generate-questions")
     public Map<String, Object> aiGenerateQuestions(@RequestBody Map<String, Object> params) {
@@ -78,6 +78,7 @@ public class QuizController {
         try {
             int score = ((Number) params.get("score")).intValue();
             int total = ((Number) params.get("total")).intValue();
+
             @SuppressWarnings("unchecked")
             Map<String, Object> topicResults = (Map<String, Object>) params.get("topicResults");
 
@@ -106,14 +107,14 @@ public class QuizController {
         }
     }
 
-    // --- Settings Endpoints ---
-
     @PostMapping("/settings/api-key")
     public Map<String, Object> setApiKey(@RequestBody Map<String, String> params) {
         String apiKey = params.get("apiKey");
+
         if (apiKey == null || apiKey.isBlank()) {
             return Map.of("success", false, "error", "API ключ не может быть пустым");
         }
+
         gigaChatService.setApiKey(apiKey);
         return Map.of("success", true, "message", "API ключ сохранён");
     }
