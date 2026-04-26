@@ -120,33 +120,38 @@ public class QuizService {
         int score = 0;
         int total = questionMap.size();
 
-        int phishingScore = 0;
-        int passwordScore = 0;
-        int emailScore = 0;
-        int personalDataScore = 0;
-        int mobileScore = 0;
-        int incidentScore = 0;
+        Map<String, Integer> topicTotals = new LinkedHashMap<>();
+        Map<String, Integer> topicCorrect = new LinkedHashMap<>();
 
         for (Question question : questionMap.values()) {
             actualTopics.add(question.topic());
+
+            String normalizedTopic = normalize(question.topic());
+            String topicGroup = detectTopicGroup(normalizedTopic);
+
+            if (topicGroup != null) {
+                topicTotals.put(topicGroup, topicTotals.getOrDefault(topicGroup, 0) + 1);
+            }
 
             Integer selectedAnswer = answerMap.get(question.id());
             boolean correct = selectedAnswer != null && selectedAnswer == question.correctAnswer();
 
             if (correct) {
                 score++;
-                String topicKey = normalize(question.topic());
-
-                if (topicKey.contains("фиш")) phishingScore++;
-                else if (topicKey.contains("парол")) passwordScore++;
-                else if (topicKey.contains("email") || topicKey.contains("почт")) emailScore++;
-                else if (topicKey.contains("персонал") || topicKey.contains("152")) personalDataScore++;
-                else if (topicKey.contains("моб")) mobileScore++;
-                else if (topicKey.contains("инцид")) incidentScore++;
+                if (topicGroup != null) {
+                    topicCorrect.put(topicGroup, topicCorrect.getOrDefault(topicGroup, 0) + 1);
+                }
             } else {
                 wrongLines.add(formatWrongAnswer(question, selectedAnswer));
             }
         }
+
+        int phishingScore = (int) Math.round(calcTopicPercent(topicCorrect, topicTotals, TOPIC_PHISHING));
+        int passwordScore = (int) Math.round(calcTopicPercent(topicCorrect, topicTotals, TOPIC_PASSWORDS));
+        int emailScore = (int) Math.round(calcTopicPercent(topicCorrect, topicTotals, TOPIC_EMAIL));
+        int personalDataScore = (int) Math.round(calcTopicPercent(topicCorrect, topicTotals, TOPIC_PD));
+        int mobileScore = (int) Math.round(calcTopicPercent(topicCorrect, topicTotals, TOPIC_MOBILE));
+        int incidentScore = (int) Math.round(calcTopicPercent(topicCorrect, topicTotals, TOPIC_INCIDENTS));
 
         result.setScore(score);
         result.setTotalQuestions(total);
@@ -331,37 +336,49 @@ public class QuizService {
         return (difficulty == null || difficulty.isBlank()) ? "medium" : difficulty;
     }
 
-    private List<String> extractWeakTopicsFromResult(QuizResult result) {
-        String summary = result.getWrongAnswersSummary();
-        if (summary == null || summary.isBlank() || summary.equalsIgnoreCase("Ошибок нет")) {
-            return List.of();
-        }
-
-        Map<String, Integer> counts = new LinkedHashMap<>();
-        counts.put(TOPIC_PHISHING, countOccurrences(summary, TOPIC_PHISHING));
-        counts.put(TOPIC_PASSWORDS, countOccurrences(summary, TOPIC_PASSWORDS));
-        counts.put(TOPIC_EMAIL, countOccurrences(summary, TOPIC_EMAIL));
-        counts.put(TOPIC_PD, countOccurrences(summary, TOPIC_PD));
-        counts.put(TOPIC_MOBILE, countOccurrences(summary, TOPIC_MOBILE));
-        counts.put(TOPIC_INCIDENTS, countOccurrences(summary, TOPIC_INCIDENTS));
-
-        return counts.entrySet().stream()
-                .filter(e -> e.getValue() > 0)
-                .sorted(Map.Entry.<String, Integer>comparingByValue(Comparator.reverseOrder()))
-                .map(Map.Entry::getKey)
-                .limit(3)
-                .toList();
+    private String detectTopicGroup(String topicKey) {
+        if (topicKey.contains("фиш")) return TOPIC_PHISHING;
+        if (topicKey.contains("парол")) return TOPIC_PASSWORDS;
+        if (topicKey.contains("email") || topicKey.contains("почт")) return TOPIC_EMAIL;
+        if (topicKey.contains("персонал") || topicKey.contains("152")) return TOPIC_PD;
+        if (topicKey.contains("моб")) return TOPIC_MOBILE;
+        if (topicKey.contains("инцид")) return TOPIC_INCIDENTS;
+        return null;
     }
 
-    private int countOccurrences(String source, String token) {
-        int count = 0;
-        int index = 0;
+    private double calcTopicPercent(Map<String, Integer> topicCorrect,
+                                    Map<String, Integer> topicTotals,
+                                    String topic) {
+        int total = topicTotals.getOrDefault(topic, 0);
+        if (total == 0) {
+            return 0.0;
+        }
+        int correct = topicCorrect.getOrDefault(topic, 0);
+        return correct * 100.0 / total;
+    }
 
-        while ((index = source.indexOf(token, index)) != -1) {
-            count++;
-            index += token.length();
+    private List<String> extractWeakTopicsFromResult(QuizResult result) {
+        List<String> weakTopics = new ArrayList<>();
+
+        if (result.getPhishingScore() < 70) {
+            weakTopics.add(TOPIC_PHISHING);
+        }
+        if (result.getPasswordPolicyScore() < 70) {
+            weakTopics.add(TOPIC_PASSWORDS);
+        }
+        if (result.getEmailSafetyScore() < 70) {
+            weakTopics.add(TOPIC_EMAIL);
+        }
+        if (result.getPersonalDataScore() < 70) {
+            weakTopics.add(TOPIC_PD);
+        }
+        if (result.getMobileSecurityScore() < 70) {
+            weakTopics.add(TOPIC_MOBILE);
+        }
+        if (result.getIncidentResponseScore() < 70) {
+            weakTopics.add(TOPIC_INCIDENTS);
         }
 
-        return count;
+        return weakTopics;
     }
 }
