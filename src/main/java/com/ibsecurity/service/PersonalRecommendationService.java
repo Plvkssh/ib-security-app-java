@@ -73,15 +73,11 @@ public class PersonalRecommendationService {
             weakTopics.add("Реагирование на инциденты");
         }
 
-        if (weakTopics.isEmpty()) {
-            weakTopics.add("Повторное контрольное тестирование");
-        }
-
         return weakTopics;
     }
 
     private String choosePhishingCampaign(AppUser user, List<String> weakTopics) {
-        String mainWeakTopic = weakTopics.get(0);
+        String mainWeakTopic = weakTopics.isEmpty() ? "Общая осведомлённость" : weakTopics.get(0);
 
         return switch (user.getJobClass()) {
             case HR -> "Сценарий для HR: письмо с резюме кандидата, архивом документов или ссылкой на портфолио. Акцент на теме: " + mainWeakTopic;
