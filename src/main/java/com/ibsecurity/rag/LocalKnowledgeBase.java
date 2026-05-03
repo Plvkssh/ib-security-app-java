@@ -89,7 +89,8 @@ public class LocalKnowledgeBase {
 
     private Set<String> buildTags(String a, String b, String c, String d) {
         Set<String> tags = new LinkedHashSet<>();
-        for (String v : List.of(a, b, c, d)) {
+        List<String> raw = Arrays.asList(a, b, c, d);
+        for (String v : raw) {
             if (v == null || v.isBlank()) continue;
             tags.add(normalize(v));
             tags.addAll(expandTopicTags(v));
