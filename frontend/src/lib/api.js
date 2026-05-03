@@ -10,7 +10,7 @@ function getCsrfToken() {
   return decodeURIComponent(cookie.split('=')[1])
 }
 
-async function apiFetch(path, options = {}) {
+export async function apiFetch(path, options = {}) {
   const method = (options.method || 'GET').toUpperCase()
   const headers = { ...(options.headers || {}) }
 
@@ -65,10 +65,10 @@ export function register(username, email, password) {
   })
 }
 
-export function login(login, password) {
+export function login(loginValue, password) {
   return apiFetch('/auth/login', {
     method: 'POST',
-    body: { login, password }
+    body: { login: loginValue, password }
   })
 }
 
@@ -83,7 +83,7 @@ export function logout() {
 }
 
 // quiz
-export async function fetchQuestions(difficulty, topics, count) {
+export function fetchQuestions(difficulty, topics, count) {
   const params = new URLSearchParams()
 
   if (difficulty) params.set('difficulty', difficulty)
