@@ -111,7 +111,11 @@ public class QuizService {
 
         QuizResult result = new QuizResult();
         result.setUser(user);
-        result.setDifficulty(request.difficulty() == null ? "mixed" : request.difficulty());
+        result.setDifficulty(
+                request.difficulty() == null || request.difficulty().isBlank()
+                        ? "базовый"
+                        : request.difficulty()
+        );
 
         Set<String> actualTopics = new LinkedHashSet<>();
         List<String> wrongLines = new ArrayList<>();
@@ -152,10 +156,13 @@ public class QuizService {
         int mobileScore = (int) Math.round(calcTopicPercent(topicCorrect, topicTotals, TOPIC_MOBILE));
         int incidentScore = (int) Math.round(calcTopicPercent(topicCorrect, topicTotals, TOPIC_INCIDENTS));
 
+        LocalDateTime now = LocalDateTime.now();
+
         result.setScore(score);
         result.setTotalQuestions(total);
         result.setTopics(new ArrayList<>(actualTopics));
-        result.setCompletedAt(LocalDateTime.now().toString());
+        result.setCreatedAt(now);
+        result.setCompletedAt(now.toString());
         result.setWrongAnswersSummary(wrongLines.isEmpty() ? "Ошибок нет" : String.join("\n\n", wrongLines));
 
         result.setPhishingScore(phishingScore);
@@ -313,17 +320,25 @@ public class QuizService {
     }
 
     private String calculateLevel(int score, int total) {
-        if (total == 0) return "Начальный";
+        if (total == 0) {
+            return "Начальный";
+        }
 
         double percent = (score * 100.0) / total;
 
-        if (percent < 50) return "Начальный";
-        if (percent < 80) return "Средний";
+        if (percent < 50) {
+            return "Начальный";
+        }
+        if (percent < 80) {
+            return "Средний";
+        }
         return "Продвинутый";
     }
 
     private int safeCount(int count) {
-        if (count <= 0) return 10;
+        if (count <= 0) {
+            return 10;
+        }
         return Math.min(count, 50);
     }
 
@@ -332,7 +347,7 @@ public class QuizService {
     }
 
     private String normalizeDifficulty(String difficulty) {
-        return (difficulty == null || difficulty.isBlank()) ? "medium" : difficulty;
+        return (difficulty == null || difficulty.isBlank()) ? "базовый" : difficulty;
     }
 
     private String detectTopicGroup(String topicKey) {
