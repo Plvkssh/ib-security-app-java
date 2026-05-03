@@ -10,7 +10,7 @@ function getCsrfToken() {
   return decodeURIComponent(cookie.split('=')[1])
 }
 
-export async function apiFetch(path, options = {}) {
+async function apiFetch(path, options = {}) {
   const method = (options.method || 'GET').toUpperCase()
   const headers = { ...(options.headers || {}) }
 
@@ -65,10 +65,10 @@ export function register(username, email, password) {
   })
 }
 
-export function login(loginValue, password) {
+export function login(username, password) {
   return apiFetch('/auth/login', {
     method: 'POST',
-    body: { login: loginValue, password }
+    body: { username, password }
   })
 }
 
@@ -83,7 +83,7 @@ export function logout() {
 }
 
 // quiz
-export function fetchQuestions(difficulty, topics, count) {
+export async function fetchQuestions(difficulty, topics, count) {
   const params = new URLSearchParams()
 
   if (difficulty) params.set('difficulty', difficulty)
@@ -132,10 +132,10 @@ export function getApiKeyStatus() {
 }
 
 // ai
-export function generateAIQuestions(weakTopics, difficulty, count) {
-  return apiFetch('/ai/generate-questions', {
+export function generateAIQuestions(difficulty, count) {
+  return apiFetch('/ai/generate-questions/me', {
     method: 'POST',
-    body: { weakTopics, difficulty, count }
+    body: { difficulty, count }
   })
 }
 
@@ -146,9 +146,6 @@ export function generateAIFeedback(score, total, topicResults) {
   })
 }
 
-export function generateAIPhishing(type, difficulty, trigger) {
-  return apiFetch('/ai/phishing', {
-    method: 'POST',
-    body: { type, difficulty, trigger }
-  })
+export function generateAIPhishing() {
+  return apiFetch('/ai/phishing/me')
 }
