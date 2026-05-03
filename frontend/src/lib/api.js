@@ -48,6 +48,7 @@ async function apiFetch(path, options = {}) {
   if (!res.ok) {
     const message =
       (payload && typeof payload === 'object' && payload.error) ||
+      (payload && typeof payload === 'object' && payload.message) ||
       (typeof payload === 'string' && payload) ||
       'Ошибка запроса'
     throw new Error(message)
@@ -56,6 +57,32 @@ async function apiFetch(path, options = {}) {
   return payload
 }
 
+// auth
+export function register(username, email, password) {
+  return apiFetch('/auth/register', {
+    method: 'POST',
+    body: { username, email, password }
+  })
+}
+
+export function login(login, password) {
+  return apiFetch('/auth/login', {
+    method: 'POST',
+    body: { login, password }
+  })
+}
+
+export function fetchMe() {
+  return apiFetch('/auth/me')
+}
+
+export function logout() {
+  return apiFetch('/auth/logout', {
+    method: 'POST'
+  })
+}
+
+// quiz
 export async function fetchQuestions(difficulty, topics, count) {
   const params = new URLSearchParams()
 
@@ -69,53 +96,59 @@ export async function fetchQuestions(difficulty, topics, count) {
   return apiFetch(`/questions${query ? `?${query}` : ''}`)
 }
 
-export async function saveResult(result) {
+export function saveResult(result) {
   return apiFetch('/results', {
     method: 'POST',
     body: result
   })
 }
 
-export async function fetchResults() {
+export function fetchResults() {
   return apiFetch('/results')
 }
 
-export async function fetchStats() {
+export function fetchStats() {
   return apiFetch('/stats')
 }
 
-export async function generatePhishing(params) {
+// phishing
+export function generatePhishing(params) {
   return apiFetch('/phishing/generate', {
     method: 'POST',
     body: params
   })
 }
 
-export async function setApiKey(apiKey) {
+// settings
+export function setApiKey(apiKey) {
   return apiFetch('/settings/api-key', {
     method: 'POST',
     body: { apiKey }
   })
 }
 
-export async function getApiKeyStatus() {
+export function getApiKeyStatus() {
   return apiFetch('/settings/api-key/status')
 }
 
-export async function generateAIQuestions(difficulty, count) {
-  return apiFetch('/ai/generate-questions/me', {
+// ai
+export function generateAIQuestions(weakTopics, difficulty, count) {
+  return apiFetch('/ai/generate-questions', {
     method: 'POST',
-    body: { difficulty, count }
+    body: { weakTopics, difficulty, count }
   })
 }
 
-export async function generateAIFeedback(score, total, topicResults) {
+export function generateAIFeedback(score, total, topicResults) {
   return apiFetch('/ai/feedback', {
     method: 'POST',
     body: { score, total, topicResults }
   })
 }
 
-export async function generateAIPhishing() {
-  return apiFetch('/ai/phishing/me')
+export function generateAIPhishing(type, difficulty, trigger) {
+  return apiFetch('/ai/phishing', {
+    method: 'POST',
+    body: { type, difficulty, trigger }
+  })
 }
