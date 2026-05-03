@@ -13,13 +13,6 @@ import {
   AlertCircle,
   Settings
 } from 'lucide-react'
-import {
-  fetchQuestions,
-  saveResult,
-  generateAIFeedback,
-  generateAIQuestions,
-  getApiKeyStatus
-} from '../lib/api'
 
 const TOPICS = [
   { id: 'phishing', label: 'Фишинг и социальная инженерия' },
@@ -27,13 +20,13 @@ const TOPICS = [
   { id: 'email', label: 'Безопасная работа с email' },
   { id: 'personal_data', label: 'Защита персональных данных (152-ФЗ)' },
   { id: 'mobile', label: 'Безопасность мобильных устройств' },
-  { id: 'incidents', label: 'Реагирование на инциденты' },
+  { id: 'incidents', label: 'Реагирование на инциденты' }
 ]
 
 const DIFFICULTIES = [
   { id: 'базовый', label: 'Базовый' },
   { id: 'продвинутый', label: 'Продвинутый' },
-  { id: 'экспертный', label: 'Экспертный' },
+  { id: 'экспертный', label: 'Экспертный' }
 ]
 
 const TOPIC_SCORE_KEYS = {
@@ -42,7 +35,7 @@ const TOPIC_SCORE_KEYS = {
   'Безопасная работа с email': 'emailSafetyScore',
   'Защита персональных данных (152-ФЗ)': 'personalDataScore',
   'Безопасность мобильных устройств': 'mobileSecurityScore',
-  'Реагирование на инциденты': 'incidentResponseScore',
+  'Реагирование на инциденты': 'incidentResponseScore'
 }
 
 const topicLabels = Object.fromEntries(TOPICS.map(t => [t.id, t.label]))
@@ -55,6 +48,7 @@ function getLevel(pct) {
       bg: 'bg-emerald-50 dark:bg-emerald-950'
     }
   }
+
   if (pct >= 61) {
     return {
       label: 'Уверенный',
@@ -62,6 +56,7 @@ function getLevel(pct) {
       bg: 'bg-cyan-50 dark:bg-cyan-950'
     }
   }
+
   if (pct >= 41) {
     return {
       label: 'Базовый',
@@ -69,6 +64,7 @@ function getLevel(pct) {
       bg: 'bg-amber-50 dark:bg-amber-950'
     }
   }
+
   return {
     label: 'Начинающий',
     color: 'text-red-600 dark:text-red-400',
@@ -76,14 +72,107 @@ function getLevel(pct) {
   }
 }
 
+function normalizeAiDifficulty(value) {
+  if (value === 'базовый') return 'easy'
+  if (value === 'экспертный') return 'hard'
+  return 'medium'
+}
+
+async function apiRequest(path, options = {}) {
+  const response = await fetch(path, {
+    credentials: 'include',
+    headers: {
+      'Content-Type': 'application/json',
+      ...(options.headers || {})
+    },
+    ...options
+  })
+
+  const contentType = response.headers.get('content-type') || ''
+  const isJson = contentType.includes('application/json')
+  const data = isJson ? await response.json() : null
+
+  if (!response.ok) {
+    const message = data?.error || data?.message || 'Ошибка запроса'
+    const error = new Error(message)
+    error.status = response.status
+    error.payload = data
+    throw error
+  }
+
+  return data
+}
+
+async function fetchMe() {
+  return apiRequest('/api/auth/me')
+}
+
+async function fetchQuestionsApi(difficulty, topics, count) {
+  const params = new URLSearchParams()
+
+  if (difficulty) {
+    params.append('difficulty', difficulty)
+  }
+
+  topics.forEach(topic => {
+    params.append('topics', topic)
+  })
+
+  params.append('count', String(count))
+
+  return apiRequest(`/api/questions?${params.toString()}`)
+}
+
+async function saveResultApi(payload) {
+  return apiRequest('/api/results', {
+    method: 'POST',
+    body: JSON.stringify(payload)
+  })
+}
+
+async function getApiKeyStatusApi() {
+  return apiRequest('/api/settings/api-key/status')
+}
+
+async function generateAIFeedbackApi(score, total, topicResults) {
+  return apiRequest('/api/ai/feedback', {
+    method: 'POST',
+    body: JSON.stringify({
+      score,
+      total,
+      topicResults
+    })
+  })
+}
+
+async function generateAIQuestionsApi(difficulty, count = 5) {
+  return apiRequest('/api/ai/generate-questions/me', {
+    method: 'POST',
+    body: JSON.stringify({
+      difficulty: normalizeAiDifficulty(difficulty),
+      count
+    })
+  })
+}
+
 export default function QuizPage() {
   const [phase, setPhase] = useState('config') // config | quiz | result
-  const [config, setConfig] = useState({ difficulty: '', topics: [], count: 10 })
+
+  const [config, setConfig] = useState({
+    difficulty: '',
+    topics: [],
+    count: 10
+  })
+
+  const [authLoading, setAuthLoading] = useState(true)
+  const [currentUser, setCurrentUser] = useState(null)
+  const [authError, setAuthError] = useState('')
 
   const [sessionId, setSessionId] = useState('')
   const [questions, setQuestions] = useState([])
   const [current, setCurrent] = useState(0)
   const [selectedAnswers, setSelectedAnswers] = useState({})
+
   const [loading, setLoading] = useState(false)
   const [submitting, setSubmitting] = useState(false)
 
@@ -98,9 +187,34 @@ export default function QuizPage() {
   const [isAiQuiz, setIsAiQuiz] = useState(false)
 
   useEffect(() => {
-    getApiKeyStatus()
-      .then(data => setApiKeyConfigured(Boolean(data?.configured)))
-      .catch(() => setApiKeyConfigured(false))
+    const init = async () => {
+      setAuthLoading(true)
+      setAuthError('')
+
+      try {
+        const [user, apiStatus] = await Promise.allSettled([
+          fetchMe(),
+          getApiKeyStatusApi()
+        ])
+
+        if (user.status === 'fulfilled') {
+          setCurrentUser(user.value)
+        } else {
+          setCurrentUser(null)
+          setAuthError(user.reason?.message || 'Не удалось проверить авторизацию')
+        }
+
+        if (apiStatus.status === 'fulfilled') {
+          setApiKeyConfigured(Boolean(apiStatus.value?.configured))
+        } else {
+          setApiKeyConfigured(false)
+        }
+      } finally {
+        setAuthLoading(false)
+      }
+    }
+
+    init()
   }, [])
 
   const selectedTopicLabels = useMemo(
@@ -109,12 +223,18 @@ export default function QuizPage() {
   )
 
   const currentQuestion = questions[current]
-  const currentSelected = currentQuestion ? selectedAnswers[currentQuestion.id] : null
+  const currentSelected = currentQuestion ? selectedAnswers[currentQuestion.id] : undefined
 
   const startQuiz = async () => {
+    if (!currentUser) {
+      alert('Для прохождения теста необходимо войти в систему.')
+      return
+    }
+
     setLoading(true)
+
     try {
-      const data = await fetchQuestions(
+      const data = await fetchQuestionsApi(
         config.difficulty,
         selectedTopicLabels,
         config.count
@@ -122,7 +242,6 @@ export default function QuizPage() {
 
       if (!data?.questions || data.questions.length === 0) {
         alert('Нет вопросов по выбранным критериям. Измените параметры.')
-        setLoading(false)
         return
       }
 
@@ -131,27 +250,35 @@ export default function QuizPage() {
       setCurrent(0)
       setSelectedAnswers({})
       setSavedResult(null)
-      setIsAiQuiz(false)
       setAiFeedback(null)
       setAiFeedbackError(null)
       setAiTrainingError(null)
+      setIsAiQuiz(false)
       setPhase('quiz')
     } catch (e) {
       alert(e.message || 'Ошибка загрузки вопросов')
+    } finally {
+      setLoading(false)
     }
-    setLoading(false)
   }
 
-  const handleSelectOption = (optionIndex) => {
+  const handleSelectOption = optionIndex => {
     if (!currentQuestion) return
+
     setSelectedAnswers(prev => ({
       ...prev,
       [currentQuestion.id]: optionIndex
     }))
   }
 
+  const prevQuestion = () => {
+    if (current > 0) {
+      setCurrent(prev => prev - 1)
+    }
+  }
+
   const nextQuestion = () => {
-    if (currentSelected === null || currentSelected === undefined) return
+    if (currentSelected === undefined) return
 
     if (current < questions.length - 1) {
       setCurrent(prev => prev + 1)
@@ -185,14 +312,20 @@ export default function QuizPage() {
         }))
       }
 
-      const result = await saveResult(payload)
+      const result = await saveResultApi(payload)
       setSavedResult(result)
       setPhase('result')
     } catch (e) {
-      alert(e.message || 'Ошибка сохранения результата')
+      if (e.status === 401) {
+        alert('Сессия пользователя не найдена. Выполните вход снова.')
+        setCurrentUser(null)
+        setPhase('config')
+      } else {
+        alert(e.message || 'Ошибка сохранения результата')
+      }
+    } finally {
+      setSubmitting(false)
     }
-
-    setSubmitting(false)
   }
 
   const reset = () => {
@@ -209,7 +342,7 @@ export default function QuizPage() {
     setIsAiQuiz(false)
   }
 
-  const toggleTopic = (id) => {
+  const toggleTopic = id => {
     setConfig(c => ({
       ...c,
       topics: c.topics.includes(id)
@@ -222,14 +355,16 @@ export default function QuizPage() {
     if (!savedResult) return {}
 
     const totals = {}
+
     questions.forEach(q => {
       totals[q.topic] = (totals[q.topic] || 0) + 1
     })
 
     const results = {}
+
     Object.entries(totals).forEach(([topic, total]) => {
       const scoreKey = TOPIC_SCORE_KEYS[topic]
-      const correct = scoreKey ? Number(savedResult[scoreKey] || 0) : 0
+      const correct = scoreKey ? Number(savedResult?.[scoreKey] || 0) : 0
       results[topic] = { correct, total }
     })
 
@@ -237,6 +372,8 @@ export default function QuizPage() {
   }
 
   const handleAiFeedback = async () => {
+    if (!savedResult) return
+
     const topicResults = buildTopicResults()
 
     setAiFeedbackLoading(true)
@@ -244,9 +381,9 @@ export default function QuizPage() {
     setAiFeedback(null)
 
     try {
-      const result = await generateAIFeedback(
-        savedResult?.score || 0,
-        savedResult?.totalQuestions || questions.length,
+      const result = await generateAIFeedbackApi(
+        Number(savedResult?.score || 0),
+        Number(savedResult?.totalQuestions || questions.length || 0),
         topicResults
       )
 
@@ -257,17 +394,22 @@ export default function QuizPage() {
       }
     } catch (e) {
       setAiFeedbackError(e.message || 'Ошибка соединения с сервером')
+    } finally {
+      setAiFeedbackLoading(false)
     }
-
-    setAiFeedbackLoading(false)
   }
 
   const handleAiTraining = async () => {
+    if (!currentUser) {
+      setAiTrainingError('Необходимо войти в систему')
+      return
+    }
+
     setAiTrainingLoading(true)
     setAiTrainingError(null)
 
     try {
-      const result = await generateAIQuestions(config.difficulty || 'базовый', 5)
+      const result = await generateAIQuestionsApi(config.difficulty || 'продвинутый', 5)
 
       if (result?.success && result?.questions?.length > 0) {
         setSessionId(result.sessionId || '')
@@ -284,9 +426,20 @@ export default function QuizPage() {
       }
     } catch (e) {
       setAiTrainingError(e.message || 'Ошибка соединения с сервером')
+    } finally {
+      setAiTrainingLoading(false)
     }
+  }
 
-    setAiTrainingLoading(false)
+  if (authLoading) {
+    return (
+      <div className="max-w-2xl mx-auto">
+        <div className="bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 p-8 flex items-center justify-center gap-3">
+          <Loader2 size={20} className="animate-spin text-cyan-600 dark:text-cyan-400" />
+          <span className="text-slate-700 dark:text-slate-300">Проверка авторизации...</span>
+        </div>
+      </div>
+    )
   }
 
   if (phase === 'config') {
@@ -295,6 +448,42 @@ export default function QuizPage() {
         <h1 className="text-2xl font-bold text-slate-900 dark:text-white mb-6">
           Настройка теста
         </h1>
+
+        {!currentUser ? (
+          <div className="mb-6 rounded-xl border border-amber-200 dark:border-amber-800 bg-amber-50 dark:bg-amber-950 p-4">
+            <div className="flex items-start gap-3">
+              <AlertCircle className="text-amber-600 dark:text-amber-400 mt-0.5" size={18} />
+              <div>
+                <h2 className="text-sm font-semibold text-amber-800 dark:text-amber-200 mb-1">
+                  Требуется вход в систему
+                </h2>
+                <p className="text-sm text-amber-700 dark:text-amber-300">
+                  Для сохранения результатов и персонализированной тренировки пользователь должен быть авторизован.
+                </p>
+                {authError && (
+                  <p className="text-xs mt-2 text-amber-700 dark:text-amber-300 opacity-80">
+                    Детали: {authError}
+                  </p>
+                )}
+              </div>
+            </div>
+          </div>
+        ) : (
+          <div className="mb-6 rounded-xl border border-emerald-200 dark:border-emerald-800 bg-emerald-50 dark:bg-emerald-950 p-4">
+            <div className="flex items-start gap-3">
+              <CheckCircle2 className="text-emerald-600 dark:text-emerald-400 mt-0.5" size={18} />
+              <div>
+                <h2 className="text-sm font-semibold text-emerald-800 dark:text-emerald-200 mb-1">
+                  Пользователь авторизован
+                </h2>
+                <p className="text-sm text-emerald-700 dark:text-emerald-300">
+                  {currentUser.fullName || currentUser.username}
+                  {currentUser.position ? ` • ${currentUser.position}` : ''}
+                </p>
+              </div>
+            </div>
+          </div>
+        )}
 
         <div className="bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 p-6 space-y-6">
           <div>
@@ -382,10 +571,39 @@ export default function QuizPage() {
             </div>
           </div>
 
+          <div className="rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 p-4">
+            <div className="flex items-start gap-3">
+              <Sparkles size={18} className="text-purple-600 dark:text-purple-400 mt-0.5" />
+              <div className="flex-1">
+                <h3 className="text-sm font-medium text-slate-900 dark:text-white mb-1">
+                  ИИ-функции
+                </h3>
+                <p className="text-sm text-slate-600 dark:text-slate-400">
+                  Персональная тренировка слабых тем и ИИ-анализ результата доступны после прохождения теста.
+                </p>
+
+                {!apiKeyConfigured && (
+                  <div className="mt-3 flex flex-wrap items-center gap-3">
+                    <span className="text-xs text-amber-600 dark:text-amber-400">
+                      API-ключ GigaChat пока не настроен
+                    </span>
+                    <Link
+                      to="/settings"
+                      className="inline-flex items-center gap-1.5 text-sm text-cyan-600 dark:text-cyan-400 hover:underline font-medium"
+                    >
+                      <Settings size={14} />
+                      Перейти в настройки
+                    </Link>
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+
           <button
             data-testid="start-quiz"
             onClick={startQuiz}
-            disabled={loading}
+            disabled={loading || !currentUser}
             className="w-full py-3 bg-cyan-600 hover:bg-cyan-700 text-white font-medium rounded-lg transition-colors flex items-center justify-center gap-2 disabled:opacity-50"
           >
             {loading ? (
@@ -461,7 +679,7 @@ export default function QuizPage() {
           )}
 
           <div className="space-y-2">
-            {currentQuestion.options.map((opt, i) => {
+            {currentQuestion.options?.map((opt, i) => {
               const isSelected = currentSelected === i
 
               return (
@@ -486,9 +704,17 @@ export default function QuizPage() {
 
           <div className="mt-5 flex gap-3">
             <button
+              onClick={prevQuestion}
+              disabled={current === 0 || submitting}
+              className="px-4 py-2.5 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 font-medium rounded-lg hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors disabled:opacity-50"
+            >
+              Назад
+            </button>
+
+            <button
               data-testid="next-question"
               onClick={nextQuestion}
-              disabled={currentSelected === null || currentSelected === undefined || submitting}
+              disabled={currentSelected === undefined || submitting}
               className="flex-1 py-2.5 bg-cyan-600 hover:bg-cyan-700 disabled:opacity-50 text-white font-medium rounded-lg transition-colors flex items-center justify-center gap-2"
             >
               {submitting ? (
@@ -506,6 +732,28 @@ export default function QuizPage() {
               )}
             </button>
           </div>
+        </div>
+      </div>
+    )
+  }
+
+  if (!savedResult) {
+    return (
+      <div className="max-w-2xl mx-auto">
+        <div className="bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 p-6 text-center">
+          <h1 className="text-xl font-bold text-slate-900 dark:text-white mb-3">
+            Нет результата для отображения
+          </h1>
+          <p className="text-slate-600 dark:text-slate-400 mb-6">
+            Попробуйте пройти тест ещё раз.
+          </p>
+          <button
+            onClick={reset}
+            className="inline-flex items-center gap-2 px-4 py-2.5 bg-cyan-600 hover:bg-cyan-700 text-white font-medium rounded-lg transition-colors"
+          >
+            <RotateCcw size={16} />
+            Вернуться к настройке
+          </button>
         </div>
       </div>
     )
@@ -538,9 +786,15 @@ export default function QuizPage() {
           </div>
         )}
 
-        <h1 className="text-xl font-bold text-slate-900 dark:text-white mb-4">
+        <h1 className="text-xl font-bold text-slate-900 dark:text-white mb-2">
           Результаты теста
         </h1>
+
+        {savedResult.completedAt && (
+          <div className="text-sm text-slate-500 dark:text-slate-400 mb-4">
+            Завершено: {savedResult.completedAt}
+          </div>
+        )}
 
         <div className={`inline-flex items-center gap-2 px-4 py-2 rounded-full text-sm font-medium mb-4 ${level.bg} ${level.color}`}>
           <Award size={18} />
@@ -569,7 +823,9 @@ export default function QuizPage() {
               stroke="currentColor"
               strokeWidth="2.5"
               strokeDasharray={`${pct}, 100`}
-              className={pct >= 61 ? 'text-emerald-500' : pct >= 41 ? 'text-amber-500' : 'text-red-500'}
+              className={
+                pct >= 61 ? 'text-emerald-500' : pct >= 41 ? 'text-amber-500' : 'text-red-500'
+              }
             />
           </svg>
           <div className="absolute inset-0 flex items-center justify-center">
@@ -627,7 +883,7 @@ export default function QuizPage() {
               <li>• Ознакомьтесь с требованиями 152-ФЗ в разделе «Обучение»</li>
             )}
             {pct >= 80 && (
-              <li>• Отличный результат. Помогите коллегам — поделитесь ссылкой на платформу</li>
+              <li>• Отличный результат. Можно переходить к усложнённым сценариям</li>
             )}
             <li>• Регулярно повторяйте тестирование для поддержания осведомлённости</li>
           </ul>
@@ -636,7 +892,7 @@ export default function QuizPage() {
         <div className="border-t border-slate-200 dark:border-slate-800 pt-6 mb-6">
           <h3 className="text-sm font-semibold text-slate-900 dark:text-white mb-3 flex items-center justify-center gap-2">
             <Sparkles size={16} className="text-purple-500" />
-            ИИ-функции (GigaChat)
+            ИИ-функции
           </h3>
 
           {!apiKeyConfigured ? (
