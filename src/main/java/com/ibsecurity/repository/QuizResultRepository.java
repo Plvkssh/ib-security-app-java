@@ -7,6 +7,8 @@ import java.util.List;
 import java.util.Optional;
 
 public interface QuizResultRepository extends JpaRepository<QuizResult, Long> {
+
     List<QuizResult> findByUser_IdOrderByCreatedAtDesc(Long userId);
+
     Optional<QuizResult> findTopByUser_IdOrderByCreatedAtDesc(Long userId);
 }
