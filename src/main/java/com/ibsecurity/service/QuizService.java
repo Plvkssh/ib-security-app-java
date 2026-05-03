@@ -53,7 +53,13 @@ public class QuizService {
     }
 
     public QuizStartResponse createQuestionSession(String difficulty, List<String> topics, int count) {
-        List<Question> selected = filterQuestions(QuestionBank.QUESTIONS, difficulty, topics, count);
+        List<Question> selected = filterQuestions(
+                QuestionBank.QUESTIONS,
+                normalizeDifficulty(difficulty),
+                topics,
+                count
+        );
+
         String sessionId = quizSessionStore.createSession(selected);
 
         return new QuizStartResponse(
@@ -89,7 +95,14 @@ public class QuizService {
     public QuizResult saveResult(String username, QuizSubmissionRequest request) {
         AppUser user = getUserByUsername(username);
 
+        if (request == null || request.sessionId() == null || request.sessionId().isBlank()) {
+            throw new IllegalStateException("Не передан sessionId");
+        }
+
         List<Question> sessionQuestions = quizSessionStore.consumeSession(request.sessionId());
+        if (sessionQuestions == null || sessionQuestions.isEmpty()) {
+            throw new IllegalStateException("Сессия теста не найдена или уже завершена");
+        }
 
         Map<String, Question> questionMap = sessionQuestions.stream()
                 .filter(Objects::nonNull)
@@ -111,11 +124,7 @@ public class QuizService {
 
         QuizResult result = new QuizResult();
         result.setUser(user);
-        result.setDifficulty(
-                request.difficulty() == null || request.difficulty().isBlank()
-                        ? "базовый"
-                        : request.difficulty()
-        );
+        result.setDifficulty(normalizeDifficulty(request.difficulty()));
 
         Set<String> actualTopics = new LinkedHashSet<>();
         List<String> wrongLines = new ArrayList<>();
@@ -163,7 +172,9 @@ public class QuizService {
         result.setTopics(new ArrayList<>(actualTopics));
         result.setCreatedAt(now);
         result.setCompletedAt(now.toString());
-        result.setWrongAnswersSummary(wrongLines.isEmpty() ? "Ошибок нет" : String.join("\n\n", wrongLines));
+        result.setWrongAnswersSummary(
+                wrongLines.isEmpty() ? "Ошибок нет" : String.join("\n\n", wrongLines)
+        );
 
         result.setPhishingScore(phishingScore);
         result.setPasswordPolicyScore(passwordScore);
@@ -303,12 +314,15 @@ public class QuizService {
 
     private String formatWrongAnswer(Question question, Integer selectedAnswer) {
         String selectedText = "не выбран";
-        if (selectedAnswer != null && selectedAnswer >= 0 && selectedAnswer < question.options().size()) {
+        if (selectedAnswer != null
+                && selectedAnswer >= 0
+                && selectedAnswer < question.options().size()) {
             selectedText = question.options().get(selectedAnswer);
         }
 
         String correctText = "неизвестно";
-        if (question.correctAnswer() >= 0 && question.correctAnswer() < question.options().size()) {
+        if (question.correctAnswer() >= 0
+                && question.correctAnswer() < question.options().size()) {
             correctText = question.options().get(question.correctAnswer());
         }
 
@@ -347,7 +361,18 @@ public class QuizService {
     }
 
     private String normalizeDifficulty(String difficulty) {
-        return (difficulty == null || difficulty.isBlank()) ? "базовый" : difficulty;
+        if (difficulty == null || difficulty.isBlank()) {
+            return "базовый";
+        }
+
+        String normalized = difficulty.trim().toLowerCase(Locale.ROOT);
+
+        return switch (normalized) {
+            case "basic", "easy", "beginner", "базовый" -> "базовый";
+            case "medium", "intermediate", "advanced", "продвинутый" -> "продвинутый";
+            case "hard", "expert", "экспертный" -> "экспертный";
+            default -> "базовый";
+        };
     }
 
     private String detectTopicGroup(String topicKey) {
@@ -367,6 +392,7 @@ public class QuizService {
         if (total == 0) {
             return 0.0;
         }
+
         int correct = topicCorrect.getOrDefault(topic, 0);
         return correct * 100.0 / total;
     }
