@@ -38,7 +38,6 @@ export default function PhishingPage() {
   const [loading, setLoading] = useState(false)
   const [expanded, setExpanded] = useState({})
 
-  // AI state
   const [apiKeyConfigured, setApiKeyConfigured] = useState(false)
   const [aiLoading, setAiLoading] = useState(false)
   const [aiScenario, setAiScenario] = useState(null)
@@ -69,17 +68,14 @@ export default function PhishingPage() {
     setAiError(null)
     setAiScenario(null)
     try {
-      const type = config.type || 'email'
-      const difficulty = config.difficulty || 'средний'
-      const trigger = config.trigger || 'срочность'
-      const result = await generateAIPhishing(type, difficulty, trigger)
+      const result = await generateAIPhishing()
       if (result.success) {
         setAiScenario({
           ...result.scenario,
           id: 'ai-' + Date.now(),
-          type,
-          difficulty,
-          trigger,
+          type: 'email',
+          difficulty: 'средний',
+          trigger: 'unknown',
         })
       } else {
         setAiError(result.error)
@@ -100,7 +96,6 @@ export default function PhishingPage() {
       <div key={sc.id || idx} className={`bg-white dark:bg-slate-900 rounded-xl border overflow-hidden ${
         isAI ? 'border-purple-300 dark:border-purple-700' : 'border-slate-200 dark:border-slate-800'
       }`} data-testid={isAI ? 'ai-scenario' : `scenario-${idx}`}>
-        {/* Header badges */}
         <div className="p-4 border-b border-slate-100 dark:border-slate-800 flex flex-wrap gap-2">
           {isAI && (
             <span className="px-2.5 py-1 text-xs font-medium rounded-full bg-purple-100 dark:bg-purple-950 text-purple-700 dark:text-purple-400 flex items-center gap-1">
@@ -119,7 +114,6 @@ export default function PhishingPage() {
           <span className="ml-auto text-xs text-slate-400">{isAI ? 'ИИ-сценарий' : `Сценарий #${idx + 1}`}</span>
         </div>
 
-        {/* Email body */}
         <div className="p-4 bg-slate-50 dark:bg-slate-800/50 border-b border-slate-100 dark:border-slate-800">
           <div className="text-xs text-slate-500 dark:text-slate-400 mb-1">
             <span className="font-medium">От:</span> {sc.from}
@@ -132,9 +126,7 @@ export default function PhishingPage() {
           </div>
         </div>
 
-        {/* Analysis sections */}
         <div className="divide-y divide-slate-100 dark:divide-slate-800">
-          {/* Red flags */}
           {sc.redFlags && sc.redFlags.length > 0 && (
             <div className="p-4">
               <button onClick={() => toggle(sc.id, 'red')} className="flex items-center gap-2 w-full text-left text-sm font-medium text-red-600 dark:text-red-400">
@@ -164,7 +156,6 @@ export default function PhishingPage() {
             </div>
           )}
 
-          {/* Correct actions */}
           {sc.correctActions && sc.correctActions.length > 0 && (
             <div className="p-4">
               <button onClick={() => toggle(sc.id, 'correct')} className="flex items-center gap-2 w-full text-left text-sm font-medium text-emerald-600 dark:text-emerald-400">
@@ -184,7 +175,6 @@ export default function PhishingPage() {
             </div>
           )}
 
-          {/* Dangerous actions */}
           {sc.dangerousActions && sc.dangerousActions.length > 0 && (
             <div className="p-4">
               <button onClick={() => toggle(sc.id, 'danger')} className="flex items-center gap-2 w-full text-left text-sm font-medium text-red-600 dark:text-red-400">
@@ -212,7 +202,6 @@ export default function PhishingPage() {
     <div>
       <h1 className="text-2xl font-bold text-slate-900 dark:text-white mb-6">Фишинговые сценарии</h1>
 
-      {/* Config */}
       <div className="bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 p-6 mb-6">
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-4">
           <div>
@@ -251,7 +240,6 @@ export default function PhishingPage() {
             {loading ? 'Генерация...' : 'Сгенерировать'}
           </button>
 
-          {/* AI Generation button */}
           {apiKeyConfigured ? (
             <button onClick={generateAI} disabled={aiLoading}
               className="flex-1 sm:flex-none px-6 py-2.5 bg-purple-600 hover:bg-purple-700 text-white font-medium rounded-lg transition-colors flex items-center justify-center gap-2 disabled:opacity-50">
@@ -268,7 +256,6 @@ export default function PhishingPage() {
           )}
         </div>
 
-        {/* AI Error */}
         {aiError && (
           <div className="mt-3 p-3 rounded-lg bg-red-50 dark:bg-red-950 border border-red-200 dark:border-red-800 text-sm text-red-700 dark:text-red-300 flex items-center gap-2">
             <XCircle size={14} /> {aiError}
@@ -276,14 +263,12 @@ export default function PhishingPage() {
         )}
       </div>
 
-      {/* AI Scenario (shown first) */}
       {aiScenario && (
         <div className="space-y-6 mb-6">
           {renderScenario(aiScenario, 0, true)}
         </div>
       )}
 
-      {/* Scenarios */}
       <div className="space-y-6">
         {scenarios.map((sc, idx) => renderScenario(sc, idx, false))}
       </div>
