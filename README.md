@@ -1,41 +1,50 @@
-# Ассистент — Security Awareness Platform
+# ИБ-Ассистент — Security Awareness Platform
 
-Платформа для тестирования осведомлённости сотрудников в области информационной безопасности и моделирования целевых фишинговых кампаний.
+Платформа для тестирования осведомлённости сотрудников в области информационной безопасности и моделирования целевых фишинговых кампаний.  
+**MVP магистерской работы.**
 
 ## Возможности
 
-* **Тесты на осведомлённость** — 157 вопросов по 6 темам, 3 уровня сложности
-* **Фишинговые сценарии** — готовые примеры фишинговых атак с разбором
-* **Обучающие материалы** — справочник по кибербезопасности
-* **ИИ-функции (GigaChat)** — генерация вопросов, адаптивная обратная связь, ИИ-фишинг
+- **Тесты на осведомлённость** — 157 вопросов по 6 темам, 3 уровня сложности
+- **Фишинговые сценарии** — готовые примеры фишинговых атак с разбором красных флагов
+- **Обучающие материалы** — встроенный справочник по кибербезопасности
+- **ИИ-функции (GigaChat)** — персонализированный анализ, генерация вопросов, создание учебных фишинговых сценариев
+- **Регистрация / аутентификация** — Spring Security + сессии
 
 ## Технологический стек
 
-* **Backend:** Java 21, Spring Boot 3.2.4, Maven
-* **Frontend:** React 18, Vite, Tailwind CSS
-* **ИИ:** GigaChat API (Сбер)
+- **Backend:** Java 21, Spring Boot 3.2.4, Spring Security, Spring Data JPA, Maven
+- **Frontend:** React 18, Vite, Tailwind CSS
+- **База данных:** PostgreSQL
+- **ИИ:** GigaChat API (Сбер)
 
 ## Темы тестирования
 
-|Тема|Вопросов|
-|-|-|
-|Фишинг и социальная инженерия|26|
-|Парольная политика|26|
-|Безопасная работа с email|26|
-|Защита персональных данных (152-ФЗ)|26|
-|Безопасность мобильных устройств|26|
-|Реагирование на инциденты|27|
-|**Итого**|**157**|
+| Тема | Вопросов |
+|------|----------|
+| Фишинг и социальная инженерия | 26 |
+| Парольная политика | 26 |
+| Безопасная работа с email | 26 |
+| Защита персональных данных (152-ФЗ) | 26 |
+| Безопасность мобильных устройств | 26 |
+| Реагирование на инциденты | 27 |
+| **Итого** | **157** |
 
-## Быстрый старт
+## Быстрый старт (Windows)
 
 ### Требования
 
-* Java 21 JDK (Adoptium Temurin)
-* Apache Maven 3.9+
-* Node.js 18+ (для пересборки фронтенда)
+- **Java 21 JDK** (например, [Adoptium Temurin](https://adoptium.net/))
+- **Apache Maven 3.9+**
+- **PostgreSQL** (любая актуальная версия)
+- **Node.js 18+** (только если нужно пересобрать фронтенд)
 
-### Запуск (фронтенд уже собран)
+### 1. Настройка базы данных
+
+1. Установи PostgreSQL и запомни пароль пользователя `postgres`.
+2. Запусти `pgAdmin` или `psql` и создай базу:
+   ```sql
+   CREATE DATABASE ib_security;### Запуск (фронтенд уже собран)
 
 ```bash
 cd ib-security-app-java
@@ -66,14 +75,18 @@ mvn package -DskipTests
 
 |Метод|Путь|Описание|
 |-|-|-|
-|GET|/api/questions|Получить вопросы (параметры: difficulty, topics, count)|
+|POST|/api/auth/register|Регистрация|
+|POST|/api/auth/login|Вход|
+|GET|/api/auth/me|Текущий пользователь|
+|POST|/api/auth/logout|Выход|
+|GET|/api/questions|Получить вопросы|
 |POST|/api/results|Сохранить результат теста|
-|GET|/api/results|Получить все результаты|
-|GET|/api/stats|Статистика тестирования|
-|POST|/api/phishing/generate|Получить фишинговые сценарии из банка|
-|POST|/api/ai/generate-questions|ИИ-генерация вопросов|
+|GET|/api/results|Получить результаты|
+|GET|/api/stats|Статистика|
+|POST|/api/phishing/generate|Фишинговые сценарии из банка|
 |POST|/api/ai/feedback|ИИ-анализ результатов|
-|POST|/api/ai/phishing|ИИ-генерация фишинговых сценариев|
+|POST|/api/ai/generate-questions/me|ИИ-генерация вопросов|
+|GET|/api/ai/phishing/me|ИИ-фишинг сценарий|
 |POST|/api/settings/api-key|Установить API-ключ GigaChat|
 |GET|/api/settings/api-key/status|Статус API-ключа|
 
@@ -81,36 +94,55 @@ mvn package -DskipTests
 
 ```
 ib-security-app-java/
-├── src/main/java/com/ibsecurity/
-│   ├── Application.java              # Точка входа Spring Boot
-│   ├── WebConfig.java                # CORS конфигурация
-│   ├── controller/
-│   │   └── QuizController.java       # REST API контроллер
-│   ├── service/
-│   │   ├── QuizService.java          # Бизнес-логика тестов
-│   │   └── GigaChatService.java      # Интеграция с GigaChat API
-│   ├── model/
-│   │   ├── Question.java             # Модель вопроса
-│   │   ├── QuizResult.java           # Модель результата
-│   │   └── PhishingScenario.java     # Модель фишингового сценария
-│   └── data/
-│       ├── QuestionBank.java         # Банк вопросов (157 шт.)
-│       └── PhishingBank.java         # Банк фишинговых сценариев
-├── src/main/resources/
-│   ├── application.properties
-│   └── static/                       # Собранный фронтенд
-├── frontend/                         # Исходники React
+├── frontend/                  # Исходники React
 │   ├── src/
 │   │   ├── App.jsx
 │   │   ├── lib/api.js
 │   │   └── pages/
-│   │       ├── HomePage.jsx
-│   │       ├── QuizPage.jsx
-│   │       ├── PhishingPage.jsx
-│   │       ├── TrainingPage.jsx
-│   │       └── SettingsPage.jsx
 │   ├── package.json
 │   └── vite.config.js
-└── pom.xml
+├── src/main/java/com/ibsecurity/
+│   ├── Application.java
+│   ├── WebConfig.java
+│   ├── controller/
+│   │   ├── AuthController.java
+│   │   └── QuizController.java
+│   ├── service/
+│   │   ├── QuizService.java
+│   │   ├── GigaChatService.java
+│   │   ├── AiPersonalizationService.java
+│   │   ├── PersonalRecommendationService.java
+│   │   └── QuizSessionStore.java
+│   ├── model/
+│   │   ├── AppUser.java
+│   │   ├── Question.java
+│   │   ├── QuizResult.java
+│   │   └── PhishingScenario.java
+│   ├── dto/
+│   │   ├── QuestionView.java
+│   │   ├── QuizStartResponse.java
+│   │   └── QuizSubmissionRequest.java
+│   ├── data/
+│   │   ├── QuestionBank.java
+│   │   └── PhishingBank.java
+│   ├── rag/
+│   │   ├── KnowledgeChunk.java
+│   │   ├── LocalKnowledgeBase.java
+│   │   ├── RagQuery.java
+│   │   └── RagRetrievalService.java
+│   ├── repository/
+│   │   ├── UserRepository.java
+│   │   └── QuizResultRepository.java
+│   └── security/
+│       └── SecurityConfig.java
+├── src/main/resources/
+│   ├── application.properties
+│   └── static/               # Собранный фронтенд
+├── .gitignore
+├── pom.xml
+└── README.md
 ```
 
+## Статус проекта
+MVP (прототип) готов.
+Проект запущен, база данных подключена, фронтенд работает. Основные функции (тестирование, фишинговые сценарии, обучение, аутентификация) реализованы.
