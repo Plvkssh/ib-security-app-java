@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react'
+import React, { useCallback, useEffect, useState } from 'react'
 import { HashRouter, Routes, Route, Link, useLocation } from 'react-router-dom'
 import {
   Shield,
@@ -9,8 +9,12 @@ import {
   Sun,
   Menu,
   X,
-  Settings
+  Settings,
+  LogOut,
+  User
 } from 'lucide-react'
+
+import { fetchMe, logout } from './lib/api'
 
 import HomePage from './pages/HomePage'
 import QuizPage from './pages/QuizPage'
@@ -39,7 +43,15 @@ function NavLink({ to, icon: Icon, children, onClick }) {
   )
 }
 
-function Layout({ children, dark, setDark }) {
+function Layout({
+  children,
+  dark,
+  setDark,
+  currentUser,
+  authLoading,
+  onLogout,
+  logoutLoading
+}) {
   const [mobileOpen, setMobileOpen] = useState(false)
   const location = useLocation()
 
@@ -106,7 +118,43 @@ function Layout({ children, dark, setDark }) {
           </NavLink>
         </nav>
 
-        <div className="p-4 border-t border-slate-200 dark:border-slate-800">
+        <div className="p-4 border-t border-slate-200 dark:border-slate-800 space-y-3">
+          <div className="px-3 py-2 rounded-lg bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700">
+            {authLoading ? (
+              <div className="text-xs text-slate-500 dark:text-slate-400">
+                Проверка сессии...
+              </div>
+            ) : currentUser ? (
+              <div className="flex items-start gap-2">
+                <User size={16} className="mt-0.5 text-cyan-600 dark:text-cyan-400" />
+                <div className="min-w-0">
+                  <div className="text-sm font-medium text-slate-900 dark:text-white truncate">
+                    {currentUser.username || 'Пользователь'}
+                  </div>
+                  <div className="text-xs text-slate-500 dark:text-slate-400 truncate">
+                    {currentUser.email || 'Авторизован'}
+                  </div>
+                </div>
+              </div>
+            ) : (
+              <div className="text-xs text-slate-500 dark:text-slate-400">
+                Гость. Вход и регистрация доступны в настройках.
+              </div>
+            )}
+          </div>
+
+          {currentUser && (
+            <button
+              type="button"
+              onClick={onLogout}
+              disabled={logoutLoading}
+              className="flex items-center justify-center gap-2 text-sm w-full px-3 py-2 rounded-lg border border-red-200 dark:border-red-800 text-red-700 dark:text-red-300 hover:bg-red-50 dark:hover:bg-red-950 transition-colors disabled:opacity-50"
+            >
+              <LogOut size={16} />
+              {logoutLoading ? 'Выход...' : 'Выйти'}
+            </button>
+          )}
+
           <button
             type="button"
             data-testid="theme-toggle"
@@ -147,27 +195,153 @@ function Layout({ children, dark, setDark }) {
   )
 }
 
+function AppRoutes({
+  dark,
+  setDark,
+  currentUser,
+  authLoading,
+  authError,
+  refreshAuth,
+  setCurrentUser,
+  handleLogout,
+  logoutLoading
+}) {
+  return (
+    <Layout
+      dark={dark}
+      setDark={setDark}
+      currentUser={currentUser}
+      authLoading={authLoading}
+      onLogout={handleLogout}
+      logoutLoading={logoutLoading}
+    >
+      <Routes>
+        <Route
+          path="/"
+          element={
+            <HomePage
+              currentUser={currentUser}
+              authLoading={authLoading}
+              authError={authError}
+            />
+          }
+        />
+        <Route
+          path="/quiz"
+          element={
+            <QuizPage
+              currentUser={currentUser}
+              authLoading={authLoading}
+              authError={authError}
+              refreshAuth={refreshAuth}
+            />
+          }
+        />
+        <Route
+          path="/phishing"
+          element={
+            <PhishingPage
+              currentUser={currentUser}
+              authLoading={authLoading}
+              authError={authError}
+            />
+          }
+        />
+        <Route
+          path="/training"
+          element={
+            <TrainingPage
+              currentUser={currentUser}
+              authLoading={authLoading}
+              authError={authError}
+            />
+          }
+        />
+        <Route
+          path="/settings"
+          element={
+            <SettingsPage
+              currentUser={currentUser}
+              authLoading={authLoading}
+              authError={authError}
+              refreshAuth={refreshAuth}
+              setCurrentUser={setCurrentUser}
+              onLogout={handleLogout}
+              logoutLoading={logoutLoading}
+            />
+          }
+        />
+      </Routes>
+    </Layout>
+  )
+}
+
 export default function App() {
   const [dark, setDark] = useState(() => {
     if (typeof window === 'undefined') return false
     return window.matchMedia('(prefers-color-scheme: dark)').matches
   })
 
+  const [authLoading, setAuthLoading] = useState(true)
+  const [authError, setAuthError] = useState('')
+  const [currentUser, setCurrentUser] = useState(null)
+  const [logoutLoading, setLogoutLoading] = useState(false)
+
   useEffect(() => {
     document.documentElement.classList.toggle('dark', dark)
   }, [dark])
 
+  const refreshAuth = useCallback(async () => {
+    setAuthLoading(true)
+    setAuthError('')
+
+    try {
+      const result = await fetchMe()
+
+      if (result?.authenticated && result?.user) {
+        setCurrentUser(result.user)
+      } else {
+        setCurrentUser(null)
+      }
+    } catch (e) {
+      setCurrentUser(null)
+      setAuthError(e.message || 'Не удалось проверить авторизацию')
+    } finally {
+      setAuthLoading(false)
+    }
+  }, [])
+
+  useEffect(() => {
+    refreshAuth()
+  }, [refreshAuth])
+
+  const handleLogout = useCallback(async () => {
+    setLogoutLoading(true)
+    setAuthError('')
+
+    try {
+      await logout()
+      setCurrentUser(null)
+    } catch (e) {
+      setAuthError(e.message || 'Не удалось выполнить выход')
+    } finally {
+      setLogoutLoading(false)
+    }
+  }, [])
+
   return (
     <HashRouter>
-      <Layout dark={dark} setDark={setDark}>
-        <Routes>
-          <Route path="/" element={<HomePage />} />
-          <Route path="/quiz" element={<QuizPage />} />
-          <Route path="/phishing" element={<PhishingPage />} />
-          <Route path="/training" element={<TrainingPage />} />
-          <Route path="/settings" element={<SettingsPage />} />
-        </Routes>
-      </Layout>
+      <AppRoutes
+        dark={dark}
+        setDark={setDark}
+        currentUser={currentUser}
+        authLoading={authLoading}
+        authError={authError}
+        refreshAuth={refreshAuth}
+        setCurrentUser={setCurrentUser}
+        handleLogout={handleLogout}
+        logoutLoading={logoutLoading}
+      />
     </HashRouter>
   )
 }
