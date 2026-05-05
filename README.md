@@ -68,7 +68,7 @@
 
 ```
 ib-security-app-java/
-├── frontend/                  # Исходники React
+├── frontend/                  
 │   ├── src/
 │   │   ├── App.jsx
 │   │   ├── lib/api.js
@@ -111,7 +111,7 @@ ib-security-app-java/
 │       └── SecurityConfig.java
 ├── src/main/resources/
 │   ├── application.properties
-│   └── static/               # Собранный фронтенд
+│   └── static/               
 ├── .gitignore
 ├── pom.xml
 └── README.md
