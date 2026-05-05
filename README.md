@@ -16,7 +16,7 @@
 - **Backend:** Java 21, Spring Boot 3.2.4, Spring Security, Spring Data JPA, Maven
 - **Frontend:** React 18, Vite, Tailwind CSS
 - **База данных:** PostgreSQL
-- **ИИ:** GigaChat API (Сбер)
+- **ИИ:** GigaChat API
 
 ## Темы тестирования
 
