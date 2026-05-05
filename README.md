@@ -30,39 +30,13 @@
 | Реагирование на инциденты | 27 |
 | **Итого** | **157** |
 
-## Быстрый старт (Windows)
 
 ### Требования
 
-- **Java 21 JDK** (например, [Adoptium Temurin](https://adoptium.net/))
+- **Java 21 JDK** 
 - **Apache Maven 3.9+**
-- **PostgreSQL** (любая актуальная версия)
-- **Node.js 18+** (только если нужно пересобрать фронтенд)
-
-### 1. Настройка базы данных
-
-1. Установи PostgreSQL и запомни пароль пользователя `postgres`.
-2. Запусти `pgAdmin` или `psql` и создай базу:
-   ```sql
-   CREATE DATABASE ib_security;### Запуск (фронтенд уже собран)
-
-```bash
-cd ib-security-app-java
-mvn package -DskipTests
-java -jar target/ib-security-awareness-1.0.0.jar
-```
-
-Откройте http://localhost:5000
-
-### Пересборка фронтенда (опционально)
-
-```bash
-cd frontend
-npm install
-npm run build
-cd ..
-mvn package -DskipTests
-```
+- **PostgreSQL** 
+- **Node.js 18+** 
 
 ## Настройка GigaChat API
 
