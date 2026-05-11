@@ -42,7 +42,6 @@ public class GigaChatService {
         this.httpClient = createInsecureHttpClient();
     }
 
-    // --- API Key management ---
 
     public void setApiKey(String apiKey) {
         this.apiKey = apiKey;
@@ -54,7 +53,6 @@ public class GigaChatService {
         return apiKey != null && !apiKey.isBlank();
     }
 
-    // --- Token management ---
 
     private String getAccessToken() throws Exception {
         if (!isApiKeyConfigured()) {
@@ -98,7 +96,6 @@ public class GigaChatService {
         }
     }
 
-    // --- Chat completion ---
 
     private String chatCompletion(String userMessage) throws Exception {
         return chatCompletion(userMessage, 0.7, 2000);
@@ -132,7 +129,6 @@ public class GigaChatService {
         return json.get("choices").get(0).get("message").get("content").asText();
     }
 
-    // --- Public methods ---
 
     public List<Question> generateQuestions(List<String> weakTopics, String difficulty, int count) throws Exception {
         List<KnowledgeChunk> contextChunks = ragRetrievalService.retrieve(
@@ -380,7 +376,6 @@ public class GigaChatService {
         return objectMapper.readValue(jsonStr, new TypeReference<>() {});
     }
 
-    // --- Helpers ---
 
     private String buildContextBlock(List<KnowledgeChunk> chunks) {
         if (chunks == null || chunks.isEmpty()) {
