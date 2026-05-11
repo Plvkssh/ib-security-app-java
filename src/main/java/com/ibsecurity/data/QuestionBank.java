@@ -6,7 +6,6 @@ import java.util.List;
 public class QuestionBank {
 
     public static final List<Question> QUESTIONS = List.of(
-        // ===== ФИШИНГ И СОЦИАЛЬНАЯ ИНЖЕНЕРИЯ — БАЗОВЫЙ =====
         new Question("ph-b-1", "phishing", "базовый", "multiple_choice",
             "Вы получили email от банка с просьбой «срочно подтвердить данные карты». Ваши действия?",
             List.of("Перейти по ссылке и ввести данные", "Позвонить в банк по номеру с официального сайта",
