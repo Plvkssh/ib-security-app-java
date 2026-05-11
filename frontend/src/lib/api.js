@@ -57,7 +57,6 @@ async function apiFetch(path, options = {}) {
   return payload
 }
 
-// auth
 export function register(username, email, password) {
   return apiFetch('/auth/register', {
     method: 'POST',
@@ -82,7 +81,6 @@ export function logout() {
   })
 }
 
-// quiz
 export async function fetchQuestions(difficulty, topics, count) {
   const params = new URLSearchParams()
 
@@ -111,7 +109,6 @@ export function fetchStats() {
   return apiFetch('/stats')
 }
 
-// phishing
 export function generatePhishing(params) {
   return apiFetch('/phishing/generate', {
     method: 'POST',
@@ -119,7 +116,6 @@ export function generatePhishing(params) {
   })
 }
 
-// settings
 export function setApiKey(apiKey) {
   return apiFetch('/settings/api-key', {
     method: 'POST',
@@ -131,7 +127,6 @@ export function getApiKeyStatus() {
   return apiFetch('/settings/api-key/status')
 }
 
-// ai
 export function generateAIQuestions(difficulty, count) {
   return apiFetch('/ai/generate-questions/me', {
     method: 'POST',
