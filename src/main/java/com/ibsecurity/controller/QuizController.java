@@ -1,5 +1,7 @@
 package com.ibsecurity.controller;
 
+import org.springframework.http.ResponseEntity;
+import org.springframework.http.HttpStatus;
 import com.ibsecurity.dto.QuizStartResponse;
 import com.ibsecurity.dto.QuizSubmissionRequest;
 import com.ibsecurity.model.PhishingScenario;
@@ -54,10 +56,14 @@ public class QuizController {
         return quizService.getResults(authentication.getName());
     }
 
-    @GetMapping("/stats")
-    public Map<String, Object> getStats(Authentication authentication) {
-        return quizService.getStats(authentication.getName());
+   @GetMapping("/stats")
+public ResponseEntity<?> getStats(Authentication authentication) {
+    if (authentication == null || !authentication.isAuthenticated()) {
+        return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                             .body(Map.of("error", "Требуется авторизация"));
     }
+    return ResponseEntity.ok(quizService.getStats(authentication.getName()));
+}
 
     @GetMapping("/ai/personalize/me")
     public Map<String, Object> getAiPersonalization(Authentication authentication) {
