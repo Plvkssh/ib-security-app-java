@@ -77,7 +77,7 @@ public class LocalKnowledgeBase {
             );
 
             chunks.add(new KnowledgeChunk(
-                    "s-" + s.id(),
+                    "s-" + s.scenarioId(),
                     "phishing_bank",
                     normalizeTopic(s.type()),
                     "scenario",
