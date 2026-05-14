@@ -32,19 +32,20 @@ public class DataInitializer implements CommandLineRunner {
         System.out.println(">>> Перенесено сценариев в БД: " + entities.size());
     }
 
-    private PhishingScenarioEntity toEntity(PhishingScenario s) {
-        return new PhishingScenarioEntity(
-                s.scenarioId(),
-                s.type(),
-                s.difficulty(),
-                s.trigger(),
-                s.sender(),
-                s.subject(),
-                s.body(),
-                s.redFlags(),
-                s.contextDetails(),
-                s.correctActions(),
-                s.wrongActions()
-        );
+   private PhishingScenarioEntity toEntity(PhishingScenario s) {
+    PhishingScenarioEntity e = new PhishingScenarioEntity();
+    e.setScenarioId(s.scenarioId());
+    e.setType(s.type());
+    e.setDifficulty(s.difficulty());
+    e.setTrigger(s.trigger());
+    e.setSender(s.sender());
+    e.setSubject(s.subject());
+    e.setBody(s.body());
+    e.setRedFlags(s.redFlags());
+    e.setContextDetails(s.contextDetails());
+    e.setCorrectActions(s.correctActions());
+    e.setWrongActions(s.wrongActions());
+    return e;
+}
     }
 }
