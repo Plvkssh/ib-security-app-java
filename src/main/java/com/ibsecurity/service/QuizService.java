@@ -227,32 +227,48 @@ public QuizService(
     }
 
     public List<PhishingScenario> getPhishingScenarios(String type, String difficulty, String trigger, int count) {
-        List<PhishingScenario> filtered = new ArrayList<>(PhishingBank.SCENARIOS);
+    List<PhishingScenarioEntity> entities;
 
-        if (type != null && !type.isBlank()) {
-            filtered = filtered.stream()
-                    .filter(s -> s.type() != null && s.type().equalsIgnoreCase(type))
-                    .toList();
-        }
+    boolean hasType = type != null && !type.isBlank();
+    boolean hasDifficulty = difficulty != null && !difficulty.isBlank();
+    boolean hasTrigger = trigger != null && !trigger.isBlank();
 
-        if (difficulty != null && !difficulty.isBlank()) {
-            filtered = filtered.stream()
-                    .filter(s -> s.difficulty() != null && s.difficulty().equalsIgnoreCase(difficulty))
-                    .toList();
-        }
-
-        if (trigger != null && !trigger.isBlank()) {
-            String normalizedTrigger = normalize(trigger);
-            filtered = filtered.stream()
-                    .filter(s -> s.trigger() != null && normalize(s.trigger()).contains(normalizedTrigger))
-                    .toList();
-        }
-
-        List<PhishingScenario> result = new ArrayList<>(filtered);
-        Collections.shuffle(result);
-        return result.stream().limit(safeCount(count)).toList();
+    if (hasType && hasDifficulty && hasTrigger) {
+        entities = phishingScenarioRepository
+                .findByTypeIgnoreCaseAndDifficultyIgnoreCaseAndTriggerContainsIgnoreCase(type, difficulty, trigger);
+    } else if (hasType && hasDifficulty) {
+        entities = phishingScenarioRepository
+                .findByTypeIgnoreCaseAndDifficultyIgnoreCase(type, difficulty);
+    } else if (hasDifficulty && hasTrigger) {
+        entities = phishingScenarioRepository
+                .findByDifficultyIgnoreCaseAndTriggerContainsIgnoreCase(difficulty, trigger);
+    } else if (hasDifficulty) {
+        entities = phishingScenarioRepository
+                .findByDifficultyIgnoreCase(difficulty);
+    } else if (hasType) {
+        entities = phishingScenarioRepository.findAll();
+        entities = entities.stream()
+                .filter(e -> e.getType().equalsIgnoreCase(type))
+                .toList();
+    } else {
+        entities = phishingScenarioRepository.findAll();
     }
 
+    if (hasTrigger && !(hasType && hasDifficulty && hasTrigger) && !(hasDifficulty && hasTrigger)) {
+        String trig = trigger.toLowerCase();
+        entities = entities.stream()
+                .filter(e -> e.getTrigger() != null && e.getTrigger().toLowerCase().contains(trig))
+                .toList();
+    }
+
+    List<PhishingScenario> scenarios = entities.stream()
+            .map(this::toScenario)
+            .toList();
+
+    List<PhishingScenario> shuffled = new ArrayList<>(scenarios);
+    Collections.shuffle(shuffled);
+    return shuffled.stream().limit(safeCount(count)).toList();
+}
     public List<String> findWeakTopicsForUser(String username) {
         AppUser user = getUserByUsername(username);
 
