@@ -39,18 +39,21 @@ public class QuizService {
     private final QuizResultRepository quizResultRepository;
     private final GigaChatService gigaChatService;
     private final QuizSessionStore quizSessionStore;
+    private final PhishingScenarioRepository phishingScenarioRepository;
 
-    public QuizService(
-            UserRepository userRepository,
-            QuizResultRepository quizResultRepository,
-            GigaChatService gigaChatService,
-            QuizSessionStore quizSessionStore
-    ) {
-        this.userRepository = userRepository;
-        this.quizResultRepository = quizResultRepository;
-        this.gigaChatService = gigaChatService;
-        this.quizSessionStore = quizSessionStore;
-    }
+public QuizService(
+        UserRepository userRepository,
+        QuizResultRepository quizResultRepository,
+        GigaChatService gigaChatService,
+        QuizSessionStore quizSessionStore,
+        PhishingScenarioRepository phishingScenarioRepository
+) {
+    this.userRepository = userRepository;
+    this.quizResultRepository = quizResultRepository;
+    this.gigaChatService = gigaChatService;
+    this.quizSessionStore = quizSessionStore;
+    this.phishingScenarioRepository = phishingScenarioRepository;
+}
 
     public QuizStartResponse createQuestionSession(String difficulty, List<String> topics, int count) {
         List<Question> selected = filterQuestions(
