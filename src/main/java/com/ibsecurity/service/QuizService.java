@@ -13,6 +13,7 @@ import com.ibsecurity.model.QuizResult;
 import com.ibsecurity.repository.QuizResultRepository;
 import com.ibsecurity.repository.UserRepository;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 import java.util.ArrayList;
@@ -227,6 +228,7 @@ public QuizService(
         return stats;
     }
 
+    @Transactional(readOnly = true)
     public List<PhishingScenario> getPhishingScenarios(String type, String difficulty, String trigger, int count) {
     List<PhishingScenarioEntity> entities;
 
