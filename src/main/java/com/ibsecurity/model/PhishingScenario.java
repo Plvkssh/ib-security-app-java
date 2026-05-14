@@ -1,17 +1,92 @@
 package com.ibsecurity.model;
 
+import jakarta.persistence.*;
 import java.util.List;
 
-public record PhishingScenario(
-    String id,
-    String type,
-    String difficulty,
-    String trigger,
-    String from,
-    String subject,
-    String body,
-    List<String> redFlags,
-    List<String> hiddenFlags,
-    List<String> correctActions,
-    List<String> dangerousActions
-) {}
+@Entity
+@Table(name = "phishing_scenarios")
+public class PhishingScenarioEntity {
+
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long id;  
+    private String scenarioId;   
+    private String type;        
+    private String difficulty;   
+    private String trigger;     
+    private String sender;       
+    private String subject;      
+    @Column(length = 2000)
+    private String body;         
+    @ElementCollection
+    @CollectionTable(name = "phishing_red_flags", joinColumns = @JoinColumn(name = "scenario_id"))
+    @Column(name = "flag")
+    private List<String> redFlags;     
+    @ElementCollection
+    @CollectionTable(name = "phishing_context", joinColumns = @JoinColumn(name = "scenario_id"))
+    @Column(name = "detail")
+    private List<String> contextDetails;
+    @ElementCollection
+    @CollectionTable(name = "phishing_correct_actions", joinColumns = @JoinColumn(name = "scenario_id"))
+    @Column(name = "action")
+    private List<String> correctActions;   
+    @ElementCollection
+    @CollectionTable(name = "phishing_wrong_actions", joinColumns = @JoinColumn(name = "scenario_id"))
+    @Column(name = "action")
+    private List<String> wrongActions;    
+    
+    public PhishingScenarioEntity() {}
+
+    public PhishingScenarioEntity(String scenarioId, String type, String difficulty, String trigger,
+                                  String sender, String subject, String body,
+                                  List<String> redFlags, List<String> contextDetails,
+                                  List<String> correctActions, List<String> wrongActions) {
+        this.scenarioId = scenarioId;
+        this.type = type;
+        this.difficulty = difficulty;
+        this.trigger = trigger;
+        this.sender = sender;
+        this.subject = subject;
+        this.body = body;
+        this.redFlags = redFlags;
+        this.contextDetails = contextDetails;
+        this.correctActions = correctActions;
+        this.wrongActions = wrongActions;
+    }
+
+    public Long getId() { return id; }
+    public void setId(Long id) { this.id = id; }
+
+    public String getScenarioId() { return scenarioId; }
+    public void setScenarioId(String scenarioId) { this.scenarioId = scenarioId; }
+
+    public String getType() { return type; }
+    public void setType(String type) { this.type = type; }
+
+    public String getDifficulty() { return difficulty; }
+    public void setDifficulty(String difficulty) { this.difficulty = difficulty; }
+
+    public String getTrigger() { return trigger; }
+    public void setTrigger(String trigger) { this.trigger = trigger; }
+
+    public String getSender() { return sender; }
+    public void setSender(String sender) { this.sender = sender; }
+
+    public String getSubject() { return subject; }
+    public void setSubject(String subject) { this.subject = subject; }
+
+    public String getBody() { return body; }
+    public void setBody(String body) { this.body = body; }
+
+    public List<String> getRedFlags() { return redFlags; }
+    public void setRedFlags(List<String> redFlags) { this.redFlags = redFlags; }
+
+    public List<String> getContextDetails() { return contextDetails; }
+    public void setContextDetails(List<String> contextDetails) { this.contextDetails = contextDetails; }
+
+    public List<String> getCorrectActions() { return correctActions; }
+    public void setCorrectActions(List<String> correctActions) { this.correctActions = correctActions; }
+
+    public List<String> getWrongActions() { return wrongActions; }
+    public void setWrongActions(List<String> wrongActions) { this.wrongActions = wrongActions; }
+}
