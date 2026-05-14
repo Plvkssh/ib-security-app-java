@@ -1,6 +1,7 @@
 package com.ibsecurity.service;
 
-import com.ibsecurity.data.PhishingBank;
+import com.ibsecurity.model.PhishingScenarioEntity;
+import com.ibsecurity.repository.PhishingScenarioRepository;
 import com.ibsecurity.data.QuestionBank;
 import com.ibsecurity.dto.QuestionView;
 import com.ibsecurity.dto.QuizStartResponse;
@@ -439,5 +440,20 @@ public QuizService(
         }
 
         return weakTopics;
+    }
+        private PhishingScenario toScenario(PhishingScenarioEntity e) {
+        return new PhishingScenario(
+                e.getScenarioId(),
+                e.getType(),
+                e.getDifficulty(),
+                e.getTrigger(),
+                e.getSender(),
+                e.getSubject(),
+                e.getBody(),
+                e.getRedFlags() != null ? e.getRedFlags() : List.of(),
+                e.getContextDetails() != null ? e.getContextDetails() : List.of(),
+                e.getCorrectActions() != null ? e.getCorrectActions() : List.of(),
+                e.getWrongActions() != null ? e.getWrongActions() : List.of()
+        );
     }
 }
