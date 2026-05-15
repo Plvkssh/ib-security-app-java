@@ -18,19 +18,19 @@ public class PhishingScenarioEntity {
     private String subject;      
     @Column(length = 2000)
     private String body;         
-    @ElementCollection
+    @ElementCollection(fetch = FetchType.EAGER)
     @CollectionTable(name = "phishing_red_flags", joinColumns = @JoinColumn(name = "scenario_id"))
     @Column(name = "flag")
     private List<String> redFlags;     
-    @ElementCollection
+    @ElementCollection(fetch = FetchType.EAGER)
     @CollectionTable(name = "phishing_context", joinColumns = @JoinColumn(name = "scenario_id"))
     @Column(name = "detail")
     private List<String> contextDetails;
-    @ElementCollection
+    @ElementCollection(fetch = FetchType.EAGER)
     @CollectionTable(name = "phishing_correct_actions", joinColumns = @JoinColumn(name = "scenario_id"))
     @Column(name = "action")
     private List<String> correctActions;   
-    @ElementCollection
+    @ElementCollection(fetch = FetchType.EAGER)
     @CollectionTable(name = "phishing_wrong_actions", joinColumns = @JoinColumn(name = "scenario_id"))
     @Column(name = "action")
     private List<String> wrongActions;    
