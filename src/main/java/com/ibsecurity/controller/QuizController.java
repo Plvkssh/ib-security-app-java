@@ -161,20 +161,4 @@ public ResponseEntity<?> getStats(Authentication authentication) {
         }
     }
 
-    @PostMapping("/settings/api-key")
-    public Map<String, Object> setApiKey(@RequestBody Map<String, String> params) {
-        String apiKey = params.get("apiKey");
-
-        if (apiKey == null || apiKey.isBlank()) {
-            return Map.of("success", false, "error", "API ключ пустой");
-        }
-
-        gigaChatService.setApiKey(apiKey);
-        return Map.of("success", true, "message", "API ключ сохранён");
-    }
-
-    @GetMapping("/settings/api-key/status")
-    public Map<String, Object> getApiKeyStatus() {
-        return Map.of("configured", gigaChatService.isApiKeyConfigured());
-    }
 }
