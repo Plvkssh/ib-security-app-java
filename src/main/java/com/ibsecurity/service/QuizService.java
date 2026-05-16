@@ -44,6 +44,7 @@ public class QuizService {
     private final GigaChatService gigaChatService;
     private final QuizSessionStore quizSessionStore;
     private final PhishingScenarioRepository phishingScenarioRepository;
+    private final QuestionRepository questionRepository;
 
 public QuizService(
         UserRepository userRepository,
