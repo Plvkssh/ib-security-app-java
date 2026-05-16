@@ -76,7 +76,7 @@ public class PersonalRecommendationService {
         return weakTopics;
     }
 
-    private String choosePhishingCampaign(AppUser user, List<String> weakTopics) {
+    public String choosePhishingCampaign(AppUser user, List<String> weakTopics) {
         String mainWeakTopic = weakTopics.isEmpty() ? "Общая осведомлённость" : weakTopics.get(0);
 
         return switch (user.getJobClass()) {
@@ -157,7 +157,7 @@ public class PersonalRecommendationService {
         return tests;
     }
 
-    private String calculateRiskLevel(QuizResult result, List<String> weakTopics) {
+    public String calculateRiskLevel(QuizResult result, List<String> weakTopics) {
         double percent = result.getPercent();
 
         if (percent < 50 || weakTopics.size() >= 4) {
