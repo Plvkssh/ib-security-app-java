@@ -51,30 +51,56 @@ public QuizService(
         QuizResultRepository quizResultRepository,
         GigaChatService gigaChatService,
         QuizSessionStore quizSessionStore,
-        PhishingScenarioRepository phishingScenarioRepository
+        PhishingScenarioRepository phishingScenarioRepository,
+        QuestionRepository questionRepository 
 ) {
     this.userRepository = userRepository;
     this.quizResultRepository = quizResultRepository;
     this.gigaChatService = gigaChatService;
     this.quizSessionStore = quizSessionStore;
     this.phishingScenarioRepository = phishingScenarioRepository;
+    this.questionRepository = questionRepository;
 }
 
     public QuizStartResponse createQuestionSession(String difficulty, List<String> topics, int count) {
-        List<Question> selected = filterQuestions(
-                QuestionBank.QUESTIONS,
-                normalizeDifficulty(difficulty),
-                topics,
-                count
-        );
+    List<QuestionEntity> allQuestions;
 
-        String sessionId = quizSessionStore.createSession(selected);
-
-        return new QuizStartResponse(
-                sessionId,
-                selected.stream().map(this::toQuestionView).toList()
-        );
+    if (difficulty != null && !difficulty.isBlank()) {
+        allQuestions = questionRepository.findByDifficultyIgnoreCase(normalizeDifficulty(difficulty));
+    } else {
+        allQuestions = questionRepository.findAll();
     }
+
+    if (topics != null && !topics.isEmpty()) {
+        allQuestions = allQuestions.stream()
+                .filter(q -> topics.stream().anyMatch(t -> t.equalsIgnoreCase(q.getTopic())))
+                .toList();
+    }
+
+    List<QuestionEntity> selected = new ArrayList<>(allQuestions);
+    Collections.shuffle(selected);
+    selected = selected.stream().limit(safeCount(count)).toList();
+
+    List<Question> questionRecords = selected.stream()
+            .map(e -> new Question(
+                    e.getId(),
+                    e.getTopic(),
+                    e.getDifficulty(),
+                    e.getType(),
+                    e.getQuestion(),
+                    e.getOptions(),
+                    e.getCorrectAnswer(),
+                    e.getExplanation(),
+                    e.getRegulation()
+            ))
+            .toList();
+
+    String sessionId = quizSessionStore.createSession(questionRecords);
+    return new QuizStartResponse(
+            sessionId,
+            questionRecords.stream().map(this::toQuestionView).toList()
+    );
+}
 
     public QuizStartResponse createAiQuestionSession(String username, String difficulty, int count) throws Exception {
         List<String> weakTopics = findWeakTopicsForUser(username);
@@ -301,30 +327,6 @@ public QuizService(
                 .orElseThrow(() -> new IllegalStateException("Пользователь не найден"));
     }
 
-    private List<Question> filterQuestions(List<Question> source, String difficulty, List<String> topics, int count) {
-        List<Question> filtered = new ArrayList<>(source);
-
-        if (difficulty != null && !difficulty.isBlank()) {
-            filtered = filtered.stream()
-                    .filter(q -> q.difficulty() != null && q.difficulty().equalsIgnoreCase(difficulty))
-                    .toList();
-        }
-
-        if (topics != null && !topics.isEmpty()) {
-            Set<String> normalizedTopics = topics.stream()
-                    .filter(Objects::nonNull)
-                    .map(this::normalize)
-                    .collect(Collectors.toSet());
-
-            filtered = filtered.stream()
-                    .filter(q -> normalizedTopics.contains(normalize(q.topic())))
-                    .toList();
-        }
-
-        List<Question> result = new ArrayList<>(filtered);
-        Collections.shuffle(result);
-        return result.stream().limit(safeCount(count)).toList();
-    }
 
     private QuestionView toQuestionView(Question q) {
         return new QuestionView(
