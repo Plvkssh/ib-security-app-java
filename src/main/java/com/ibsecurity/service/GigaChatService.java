@@ -47,7 +47,7 @@ public class GigaChatService {
 
     private String getAccessToken() throws Exception {
         if (apiKey == null || apiKey.isBlank()) {
-            throw new IllegalStateException("GigaChat API key не настроен (переменная окружения GIGACHAT_API_KEY или application.properties)");
+            throw new IllegalStateException("GigaChat API key не задан. Укажите его в application.properties или переменной окружения GIGACHAT_API_KEY");
         }
 
         if (accessToken != null && Instant.now().toEpochMilli() < (tokenExpiresAt - 60_000)) {
