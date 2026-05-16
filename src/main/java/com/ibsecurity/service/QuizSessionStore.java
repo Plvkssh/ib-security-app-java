@@ -1,45 +1,49 @@
 package com.ibsecurity.service;
 
 import com.ibsecurity.model.Question;
-import org.springframework.scheduling.annotation.Scheduled;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Component;
 
-import java.time.Instant;
-import java.time.temporal.ChronoUnit;
+import java.time.Duration;
 import java.util.List;
-import java.util.Map;
 import java.util.UUID;
-import java.util.concurrent.ConcurrentHashMap;
 
 @Component
 public class QuizSessionStore {
 
-    private final Map<String, SessionEntry> sessions = new ConcurrentHashMap<>();
+    private final RedisTemplate<String, Object> redisTemplate;
+    private final Duration sessionTtl;
+
+    public QuizSessionStore(RedisTemplate<String, Object> redisTemplate,
+                            @Value("${redis.session.ttl:1800}") long ttlSeconds) {
+        this.redisTemplate = redisTemplate;
+        this.sessionTtl = Duration.ofSeconds(ttlSeconds);
+    }
 
     public String createSession(List<Question> questions) {
         String sessionId = UUID.randomUUID().toString();
-        sessions.put(sessionId, new SessionEntry(questions, Instant.now()));
+        redisTemplate.opsForValue().set(sessionId, questions, sessionTtl);
         return sessionId;
     }
 
+    @SuppressWarnings("unchecked")
     public List<Question> consumeSession(String sessionId) {
         if (sessionId == null || sessionId.isBlank()) {
             throw new IllegalArgumentException("sessionId пустой");
         }
 
-        SessionEntry entry = sessions.remove(sessionId);
-        if (entry == null) {
+        Object value = redisTemplate.opsForValue().get(sessionId);
+        if (value == null) {
             throw new IllegalArgumentException("Сессия теста не найдена или уже использована");
         }
 
-        return entry.questions();
-    }
+        redisTemplate.delete(sessionId);
 
-    @Scheduled(fixedRate = 60_000)
-    public void cleanUp() {
-        Instant cutoff = Instant.now().minus(30, ChronoUnit.MINUTES);
-        sessions.entrySet().removeIf(e -> e.getValue().createdAt().isBefore(cutoff));
+        if (value instanceof List<?> list && !list.isEmpty() && list.get(0) instanceof Question) {
+            return (List<Question>) list;
+        }
+        
+        throw new IllegalStateException("Некорректный тип данных в сессии");
     }
-
-    private record SessionEntry(List<Question> questions, Instant createdAt) {}
 }
