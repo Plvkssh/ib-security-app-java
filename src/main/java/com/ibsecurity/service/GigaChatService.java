@@ -7,6 +7,7 @@ import com.ibsecurity.model.Question;
 import com.ibsecurity.rag.KnowledgeChunk;
 import com.ibsecurity.rag.RagQuery;
 import com.ibsecurity.rag.RagRetrievalService;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
 import javax.net.ssl.SSLContext;
@@ -33,7 +34,9 @@ public class GigaChatService {
     private final ReentrantLock tokenLock = new ReentrantLock();
     private final RagRetrievalService ragRetrievalService;
 
-    private volatile String apiKey;
+    @Value("${gigachat.api.key:}")
+    private String apiKey;
+
     private volatile String accessToken;
     private volatile long tokenExpiresAt;
 
@@ -42,21 +45,9 @@ public class GigaChatService {
         this.httpClient = createInsecureHttpClient();
     }
 
-
-    public void setApiKey(String apiKey) {
-        this.apiKey = apiKey;
-        this.accessToken = null;
-        this.tokenExpiresAt = 0;
-    }
-
-    public boolean isApiKeyConfigured() {
-        return apiKey != null && !apiKey.isBlank();
-    }
-
-
     private String getAccessToken() throws Exception {
-        if (!isApiKeyConfigured()) {
-            throw new IllegalStateException("GigaChat API key is not configured");
+        if (apiKey == null || apiKey.isBlank()) {
+            throw new IllegalStateException("GigaChat API key не настроен (переменная окружения GIGACHAT_API_KEY или application.properties)");
         }
 
         if (accessToken != null && Instant.now().toEpochMilli() < (tokenExpiresAt - 60_000)) {
@@ -96,7 +87,6 @@ public class GigaChatService {
         }
     }
 
-
     private String chatCompletion(String userMessage) throws Exception {
         return chatCompletion(userMessage, 0.7, 2000);
     }
@@ -128,7 +118,6 @@ public class GigaChatService {
         JsonNode json = objectMapper.readTree(response.body());
         return json.get("choices").get(0).get("message").get("content").asText();
     }
-
 
     public List<Question> generateQuestions(List<String> weakTopics, String difficulty, int count) throws Exception {
         List<KnowledgeChunk> contextChunks = ragRetrievalService.retrieve(
@@ -375,7 +364,6 @@ public class GigaChatService {
         String jsonStr = extractJsonObject(responseText);
         return objectMapper.readValue(jsonStr, new TypeReference<>() {});
     }
-
 
     private String buildContextBlock(List<KnowledgeChunk> chunks) {
         if (chunks == null || chunks.isEmpty()) {
