@@ -26,10 +26,12 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 @Service
 public class QuizService {
-
+    private static final Logger log = LoggerFactory.getLogger(QuizService.class);
     private static final String TOPIC_PHISHING = "Фишинг и социальная инженерия";
     private static final String TOPIC_PASSWORDS = "Парольная политика";
     private static final String TOPIC_EMAIL = "Безопасная работа с email";
@@ -189,7 +191,8 @@ public QuizService(
         result.setIncidentResponseScore(incidentScore);
 
         result.setLevel(calculateLevel(score, total));
-
+         log.info("Пользователь {} завершил тест. Правильных ответов: {}/{}. Слабые темы: {}", 
+                 username, score, total, extractWeakTopicsFromResult(result));
         return quizResultRepository.save(result);
     }
 
