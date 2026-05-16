@@ -68,55 +68,78 @@
 
 ```
 ib-security-app-java/
-├── frontend/                  
+├── frontend/
 │   ├── src/
 │   │   ├── App.jsx
 │   │   ├── lib/api.js
 │   │   └── pages/
 │   ├── package.json
 │   └── vite.config.js
-├── src/main/java/com/ibsecurity/
-│   ├── Application.java
-│   ├── WebConfig.java
-│   ├── controller/
-│   │   ├── AuthController.java
-│   │   └── QuizController.java
-│   ├── service/
-│   │   ├── QuizService.java
-│   │   ├── GigaChatService.java
-│   │   ├── AiPersonalizationService.java
-│   │   ├── PersonalRecommendationService.java
-│   │   └── QuizSessionStore.java
-│   ├── model/
-│   │   ├── AppUser.java
-│   │   ├── Question.java
-│   │   ├── QuizResult.java
-│   │   └── PhishingScenario.java
-│   ├── dto/
-│   │   ├── QuestionView.java
-│   │   ├── QuizStartResponse.java
-│   │   └── QuizSubmissionRequest.java
-│   ├── data/
-│   │   ├── QuestionBank.java
-│   │   └── PhishingBank.java
-│   ├── rag/
-│   │   ├── KnowledgeChunk.java
-│   │   ├── LocalKnowledgeBase.java
-│   │   ├── RagQuery.java
-│   │   └── RagRetrievalService.java
-│   ├── repository/
-│   │   ├── UserRepository.java
-│   │   └── QuizResultRepository.java
-│   └── security/
-│       └── SecurityConfig.java
-├── src/main/resources/
-│   ├── application.properties
-│   └── static/               
+├── src/
+│   ├── main/
+│   │   ├── java/com/ibsecurity/
+│   │   │   ├── Application.java
+│   │   │   ├── WebConfig.java
+│   │   │   ├── config/
+│   │   │   │   ├── RedisConfig.java
+│   │   │   │   └── DataInitializer.java         
+│   │   │   ├── controller/
+│   │   │   │   ├── AuthController.java
+│   │   │   │   └── QuizController.java
+│   │   │   ├── data/
+│   │   │   │   ├── QuestionBank.java             
+│   │   │   │   └── PhishingBank.java              
+│   │   │   ├── dto/
+│   │   │   │   ├── QuestionView.java
+│   │   │   │   ├── QuizStartResponse.java
+│   │   │   │   └── QuizSubmissionRequest.java
+│   │   │   ├── model/
+│   │   │   │   ├── AppUser.java
+│   │   │   │   ├── Question.java                 
+│   │   │   │   ├── QuestionEntity.java            
+│   │   │   │   ├── QuizResult.java
+│   │   │   │   ├── PhishingScenario.java         
+│   │   │   │   └── PhishingScenarioEntity.java    
+│   │   │   ├── rag/
+│   │   │   │   ├── KnowledgeChunk.java
+│   │   │   │   ├── LocalKnowledgeBase.java
+│   │   │   │   ├── RagQuery.java
+│   │   │   │   └── RagRetrievalService.java
+│   │   │   ├── repository/
+│   │   │   │   ├── UserRepository.java
+│   │   │   │   ├── QuizResultRepository.java
+│   │   │   │   └── QuestionRepository.java        
+│   │   │   │   └── PhishingScenarioRepository.java
+│   │   │   ├── security/
+│   │   │   │   └── SecurityConfig.java
+│   │   │   └── service/
+│   │   │       ├── QuizService.java
+│   │   │       ├── GigaChatService.java
+│   │   │       ├── AiPersonalizationService.java
+│   │   │       ├── PersonalRecommendationService.java
+│   │   │       └── QuizSessionStore.java
+│   │   └── resources/
+│   │       ├── application.properties
+│   │       └── static/
+│   └── test/
+│       └── java/com/ibsecurity/service/
+│           └── PersonalRecommendationServiceTest.java   
 ├── .gitignore
 ├── pom.xml
 └── README.md
 ```
+## Тестирование
+
+В проекте реализованы модульные тесты для сервиса персонализации:
+- `PersonalRecommendationServiceTest` проверяет расчет уровня риска и подбор фишинговых кампаний.
+- Для запуска тестов: `mvn test`
 
 ## Статус проекта
 MVP (прототип) готов.
 Проект запущен, база данных подключена, фронтенд работает. Основные функции (тестирование, фишинговые сценарии, обучение, аутентификация) реализованы.
+
+## Логирование
+
+Ведётся лог действий пользователей (прохождение тестов) с помощью SLF4J.
+Пример лога:
+
