@@ -6,13 +6,10 @@ import {
   Loader2,
   Eye,
   EyeOff,
-  Key,
-  ExternalLink,
   User,
   LogIn,
   UserPlus,
-  LogOut,
-  Shield
+  LogOut
 } from 'lucide-react'
 
 async function apiRequest(path, options = {}) {
@@ -64,7 +61,6 @@ async function logoutUser() {
   })
 }
 
-
 export default function SettingsPage() {
   const [authLoading, setAuthLoading] = useState(true)
   const [currentUser, setCurrentUser] = useState(null)
@@ -88,32 +84,14 @@ export default function SettingsPage() {
   const [showLoginPassword, setShowLoginPassword] = useState(false)
   const [showRegisterPassword, setShowRegisterPassword] = useState(false)
 
-  const [key, setKey] = useState('')
-  const [status, setStatus] = useState(null)
-  const [saving, setSaving] = useState(false)
-  const [apiMessage, setApiMessage] = useState(null)
-  const [showKey, setShowKey] = useState(false)
-
   const loadPageState = async () => {
     setAuthLoading(true)
 
     try {
-      const [meResult, keyResult] = await Promise.allSettled([
-        getMe(),
-        getApiKeyStatus()
-      ])
-
-      if (meResult.status === 'fulfilled') {
-        setCurrentUser(meResult.value)
-      } else {
-        setCurrentUser(null)
-      }
-
-      if (keyResult.status === 'fulfilled') {
-        setStatus(Boolean(keyResult.value?.configured))
-      } else {
-        setStatus(false)
-      }
+      const meResult = await getMe()
+      setCurrentUser(meResult)
+    } catch {
+      setCurrentUser(null)
     } finally {
       setAuthLoading(false)
     }
@@ -192,32 +170,6 @@ export default function SettingsPage() {
       setAuthMessage({ type: 'error', text: e.message || 'Ошибка выхода' })
     } finally {
       setAuthSubmitting(false)
-    }
-  }
-
-  const handleSaveKey = async () => {
-    if (!key.trim()) {
-      setApiMessage({ type: 'error', text: 'Введите API-ключ' })
-      return
-    }
-
-    setSaving(true)
-    setApiMessage(null)
-
-    try {
-      const result = await setApiKey(key.trim())
-
-      if (result?.success) {
-        setApiMessage({ type: 'success', text: 'API-ключ успешно сохранён' })
-        setStatus(true)
-        setKey('')
-      } else {
-        setApiMessage({ type: 'error', text: result?.error || 'Ошибка сохранения' })
-      }
-    } catch (e) {
-      setApiMessage({ type: 'error', text: e.message || 'Ошибка соединения с сервером' })
-    } finally {
-      setSaving(false)
     }
   }
 
@@ -472,5 +424,20 @@ export default function SettingsPage() {
           </div>
         )}
       </div>
+
+      <div className="bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 p-6">
+        <h3 className="text-sm font-semibold text-slate-900 dark:text-white mb-3 flex items-center gap-2">
+           Ключ доступа GigaChat
+        </h3>
+        <p className="text-sm text-slate-600 dark:text-slate-400 mb-4">
+          Ключ доступа к ИИ-функциям задаётся через переменную окружения <code className="px-1.5 py-0.5 rounded bg-slate-100 dark:bg-slate-800 text-xs font-mono">GIGACHAT_API_KEY</code> при запуске приложения.
+        </p>
+        <div className="mt-4 p-3 rounded-lg bg-amber-50 dark:bg-amber-950 border border-amber-200 dark:border-amber-800">
+          <p className="text-xs text-amber-700 dark:text-amber-300">
+            <strong>Внимание:</strong> для промышленной эксплуатации ключ должен храниться в защищённом хранилище (переменные окружения / Vault), а не в коде или базе данных.
+          </p>
+        </div>
+      </div>
+    </div>
   )
 }
