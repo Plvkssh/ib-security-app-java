@@ -1,7 +1,7 @@
-import React, { useState, useEffect } from 'react'
+import React, { useState } from 'react'
 import { Link } from 'react-router-dom'
-import { Fish, AlertTriangle, CheckCircle2, XCircle, Eye, EyeOff, Loader2, Mail, MessageSquare, Phone, Sparkles, Settings, AlertCircle } from 'lucide-react'
-import { generatePhishing, generateAIPhishing, getApiKeyStatus } from '../lib/api'
+import { Fish, AlertTriangle, CheckCircle2, XCircle, Eye, EyeOff, Loader2, Mail, MessageSquare, Phone, Sparkles } from 'lucide-react'
+import { generatePhishing, generateAIPhishing } from '../lib/api'
 
 const TYPES = [
   { id: '', label: 'Все типы' },
@@ -38,16 +38,9 @@ export default function PhishingPage() {
   const [loading, setLoading] = useState(false)
   const [expanded, setExpanded] = useState({})
 
-  const [apiKeyConfigured, setApiKeyConfigured] = useState(false)
   const [aiLoading, setAiLoading] = useState(false)
   const [aiScenario, setAiScenario] = useState(null)
   const [aiError, setAiError] = useState(null)
-
-  useEffect(() => {
-    getApiKeyStatus()
-      .then(data => setApiKeyConfigured(data.configured))
-      .catch(() => setApiKeyConfigured(false))
-  }, [])
 
   const generate = async () => {
     setLoading(true)
@@ -240,20 +233,11 @@ export default function PhishingPage() {
             {loading ? 'Генерация...' : 'Сгенерировать'}
           </button>
 
-          {apiKeyConfigured ? (
-            <button onClick={generateAI} disabled={aiLoading}
-              className="flex-1 sm:flex-none px-6 py-2.5 bg-purple-600 hover:bg-purple-700 text-white font-medium rounded-lg transition-colors flex items-center justify-center gap-2 disabled:opacity-50">
-              {aiLoading ? <Loader2 size={16} className="animate-spin" /> : <Sparkles size={16} />}
-              {aiLoading ? 'ИИ генерирует...' : 'ИИ-генерация'}
-            </button>
-          ) : (
-            <Link to="/settings"
-              className="flex-1 sm:flex-none px-6 py-2.5 border border-purple-300 dark:border-purple-700 text-purple-600 dark:text-purple-400 font-medium rounded-lg transition-colors flex items-center justify-center gap-2 hover:bg-purple-50 dark:hover:bg-purple-950">
-              <Sparkles size={16} />
-              ИИ-генерация
-              <Settings size={14} className="opacity-50" />
-            </Link>
-          )}
+          <button onClick={generateAI} disabled={aiLoading}
+            className="flex-1 sm:flex-none px-6 py-2.5 bg-purple-600 hover:bg-purple-700 text-white font-medium rounded-lg transition-colors flex items-center justify-center gap-2 disabled:opacity-50">
+            {aiLoading ? <Loader2 size={16} className="animate-spin" /> : <Sparkles size={16} />}
+            {aiLoading ? 'ИИ генерирует...' : 'ИИ-генерация'}
+          </button>
         </div>
 
         {aiError && (
