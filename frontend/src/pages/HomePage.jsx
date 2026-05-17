@@ -1,17 +1,13 @@
 import React, { useState, useEffect } from 'react'
 import { Link } from 'react-router-dom'
-import { Shield, Fish, BookOpen, TrendingUp, Award, BarChart3, Sparkles, Bot, CheckCircle2, XCircle, Settings } from 'lucide-react'
-import { fetchStats, getApiKeyStatus } from '../lib/api'
+import { Shield, Fish, BookOpen, TrendingUp, Award, BarChart3 } from 'lucide-react'
+import { fetchStats } from '../lib/api'
 
 export default function HomePage() {
   const [stats, setStats] = useState(null)
-  const [aiStatus, setAiStatus] = useState(null) // null = loading, true/false
 
   useEffect(() => {
     fetchStats().then(setStats).catch(() => {})
-    getApiKeyStatus()
-      .then(data => setAiStatus(data.configured))
-      .catch(() => setAiStatus(false))
   }, [])
 
   const cards = [
@@ -88,57 +84,6 @@ export default function HomePage() {
           )}
         </div>
       )}
-
-      {/* AI Status Card */}
-      <div className="mb-8 bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 overflow-hidden">
-        <div className="h-1.5 bg-gradient-to-r from-purple-500 to-violet-600" />
-        <div className="p-5">
-          <div className="flex items-start gap-4">
-            <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-purple-500 to-violet-600 flex items-center justify-center flex-shrink-0">
-              <Bot size={24} className="text-white" />
-            </div>
-            <div className="flex-1 min-w-0">
-              <div className="flex items-center gap-3 mb-1">
-                <h2 className="text-base font-semibold text-slate-900 dark:text-white">ИИ-функции (GigaChat)</h2>
-                {aiStatus === null ? (
-                  <span className="px-2 py-0.5 rounded-full text-xs font-medium bg-slate-100 dark:bg-slate-800 text-slate-500">Проверка...</span>
-                ) : aiStatus ? (
-                  <span className="px-2 py-0.5 rounded-full text-xs font-medium bg-emerald-50 dark:bg-emerald-950 text-emerald-600 dark:text-emerald-400 flex items-center gap-1">
-                    <CheckCircle2 size={12} /> Активен
-                  </span>
-                ) : (
-                  <span className="px-2 py-0.5 rounded-full text-xs font-medium bg-amber-50 dark:bg-amber-950 text-amber-600 dark:text-amber-400 flex items-center gap-1">
-                    <XCircle size={12} /> Не настроен
-                  </span>
-                )}
-              </div>
-              <p className="text-sm text-slate-500 dark:text-slate-400 mb-3">
-                Персональный ИИ-анализ результатов, генерация вопросов для тренировки слабых тем и создание уникальных фишинговых сценариев.
-              </p>
-              <div className="flex flex-wrap gap-2 mb-3">
-                <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-md bg-purple-50 dark:bg-purple-950 text-xs text-purple-700 dark:text-purple-400">
-                  <Sparkles size={12} /> ИИ-анализ результатов
-                </span>
-                <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-md bg-purple-50 dark:bg-purple-950 text-xs text-purple-700 dark:text-purple-400">
-                  <Sparkles size={12} /> Генерация вопросов
-                </span>
-                <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-md bg-purple-50 dark:bg-purple-950 text-xs text-purple-700 dark:text-purple-400">
-                  <Sparkles size={12} /> ИИ-фишинг сценарии
-                </span>
-              </div>
-              {!aiStatus && aiStatus !== null && (
-                <Link
-                  to="/settings"
-                  className="inline-flex items-center gap-1.5 text-sm font-medium text-cyan-600 dark:text-cyan-400 hover:underline"
-                >
-                  <Settings size={14} />
-                  Настроить API-ключ
-                </Link>
-              )}
-            </div>
-          </div>
-        </div>
-      </div>
 
       {/* Cards */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
